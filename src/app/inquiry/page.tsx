@@ -17,7 +17,8 @@ export default async function InquiryPage({
     params.type === "custom" ? "custom" : product ? "product" : "general";
   const connected = !!(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   );
   return (
     <section className="inquiry-page inquiry-textured">

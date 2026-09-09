@@ -41,15 +41,19 @@ The confirmed brand email, Instagram and Facebook are configured in src/lib/bran
 
 Without Supabase credentials, forms validate and return a **preview** response. They explicitly say that nothing was sent, subscribed or saved. No personal information is persisted in browser storage. Only a successful live database submission shows “INQUIRY SENT.”
 
-## Connect Supabase later
+## Supabase setup
 
 1. Copy `.env.example` to `.env.local`.
-2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the project's public URL and publishable/anon key. Never use a service-role or secret key in these variables.
+2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to the project's public URL and publishable key. `NEXT_PUBLIC_SUPABASE_ANON_KEY` remains supported as a legacy fallback. Never use a service-role or secret key in these variables.
 3. Apply `supabase/migrations/001_storefront.sql` to a fresh Supabase project.
 4. Add verified categories, products and product_images. `npm run catalog:export` creates **sample-only** import SQL in `.work/seed.sample.sql` if you want to inspect the placeholder data shape. Do not import that data into a real storefront without approval.
 5. Keep local public image paths, or upload photos to Supabase Storage and use public HTTPS URLs from your configured project's storage endpoint. The Next.js config allows only that project's public storage path.
 6. Set `NEXT_PUBLIC_CATALOG_SOURCE=supabase` and restart/redeploy. Until this flag is set, the local catalog remains the source. Once enabled, database errors show an error state instead of silently presenting sample inventory.
 7. Set verified contact variables and the production `NEXT_PUBLIC_SITE_URL`.
+
+Cookie-aware clients live in `src/utils/supabase/client.ts` (browser) and `src/utils/supabase/server.ts` (server). Pass `await cookies()` from `next/headers` to the server helper. Next.js 16 uses `src/proxy.ts` to call the session-refresh helper in `src/utils/supabase/middleware.ts`; it validates claims and propagates refreshed cookies to both the request and response. This does not add login screens or protect routes.
+
+The `/todos` example reads `id` and `name` from an existing `todos` table using the server client. Create that table and configure its RLS policies in Supabase before expecting results; the storefront migration does not create it. Query failures display an unavailable state. The home page continues to show the storefront.
 
 The data service maps the products/product_images relationship to the same typed Product model used by every page. Public products include available, sold and archived pieces. Home and sitemap revalidate after 60 seconds; shop and individual product views render on request.
 
