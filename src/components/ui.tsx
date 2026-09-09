@@ -94,21 +94,10 @@ export function EditorialImage({
     </div>
   );
 }
-export function BrandStar({ className = "" }: { className?: string }) {
-  return (
-    <Image
-      className={`brand-star ${className}`}
-      src="/images/star-off-the-rack-logo-favicon.webp"
-      alt=""
-      width={160}
-      height={160}
-    />
-  );
-}
 export function Marquee({ reverse = false }: { reverse?: boolean }) {
   const text = reverse
     ? "ONE OF ONE / HAND PAINTED / WEARABLE ART / NO REPEATS / "
-    : "RACK / RACK / RACK / RACK / RACK / RACK / ";
+    : "OFF THE RACK / OFF THE RACK / OFF THE RACK / OFF THE RACK / ";
   return (
     <div
       role="group"

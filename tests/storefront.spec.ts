@@ -4,7 +4,6 @@ const routes = [
   "/",
   "/shop",
   "/product/crimson-web-hoodie",
-  "/archive",
   "/about",
   "/contact",
   "/inquiry?type=custom",

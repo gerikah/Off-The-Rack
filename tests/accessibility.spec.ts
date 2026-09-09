@@ -7,7 +7,6 @@ for (const width of [375, 1440]) {
       "/",
       "/shop",
       "/product/crimson-web-hoodie",
-      "/archive",
       "/about",
       "/contact",
       "/inquiry?type=custom",

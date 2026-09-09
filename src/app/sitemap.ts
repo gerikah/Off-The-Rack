@@ -5,7 +5,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const products = await getProducts();
   return [
-    ...["", "/shop", "/archive", "/about", "/contact"].map((route) => ({
+    ...["", "/shop", "/about", "/contact"].map((route) => ({
       url: `${origin}${route}`,
       changeFrequency: "weekly" as const,
     })),

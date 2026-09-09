@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
-import { Arrow, BrandStar } from "@/components/ui";
+import { Arrow } from "@/components/ui";
 export const metadata: Metadata = { title: "Get in touch" };
 export default function ContactPage() {
   return (
@@ -12,7 +12,6 @@ export default function ContactPage() {
           LET’S MAKE
           <br />A CONNECTION<span className="heading-dot">.</span>
         </h1>
-        <BrandStar />
         <p>
           A piece caught your eye? An idea on your mind?
           <br />

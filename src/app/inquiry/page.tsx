@@ -2,7 +2,6 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { getProduct } from "@/lib/products";
 import { InquiryForm } from "@/components/inquiry-form";
-import { BrandStar } from "@/components/ui";
 export const metadata: Metadata = {
   title: "Send an inquiry",
   robots: { index: false, follow: true },
@@ -21,11 +20,11 @@ export default async function InquiryPage({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
   return (
-    <section className="inquiry-page">
+    <section className="inquiry-page inquiry-textured">
       <Image
         className="inquiry-background"
-        src="/images/13.webp"
-        alt="Hand-painted silver artwork on a black denim jacket"
+        src="/images/background.webp"
+        alt=""
         fill
         preload
         sizes="100vw"
@@ -40,7 +39,6 @@ export default async function InquiryPage({
             <br />
             <span className="chrome">HERE.</span>
           </h1>
-          <BrandStar />
           <p>
             Something caught your eye.
             <br />

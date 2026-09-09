@@ -17,7 +17,7 @@ export function Footer() {
         </Link>
       </div>
       <div className="footer-wordmark" role="img" aria-label="Off The Rack">
-        OFF THE RACK<span>✳</span>
+        OFF THE RACK
       </div>
       <div className="footer-grid">
         <div>
@@ -33,7 +33,6 @@ export function Footer() {
           {[
             ["Home", "/"],
             ["Shop", "/shop"],
-            ["Archive", "/archive"],
             ["About", "/about"],
             ["Contact", "/contact"],
           ].map(([label, href]) => (

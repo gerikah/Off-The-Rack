@@ -25,11 +25,11 @@ Playwright uses installed Chrome by default. For another environment, run `npx p
 
 ## What is implemented
 
-- Home: campaign hero, two reduced-motion-aware marquees, swipeable arrivals on mobile, photography-led brand story, editorial bestseller grid, custom-order tile, newsletter.
+- Home: campaign hero, two reduced-motion-aware marquees, swipeable arrivals on mobile, photography-led brand story, editorial featured-works grid, custom-order tile, newsletter.
 - Shop: availability and category filters, name/color/category search, price/date sorting, empty state and reset.
 - Product: gallery controls, availability, price, sizing, condition, material, details, measurements, care, delivery and customization accordions, related pieces.
 - Inquiry: product preselection via URL, conditional custom fields, browser and server validation, consent, pending/error/success states.
-- Archive, About, Contact, custom 404 and error pages, loading state, metadata, sitemap and robots.
+- About, Contact, custom 404 and error pages, loading state, metadata, sitemap and robots.
 - Sticky navigation, native modal mobile menu with focus containment and Escape support, skip link, keyboard focus styles, responsive layouts.
 - All `/admin/*` routes are reserved and return the branded not-found page. No admin dashboard or authentication UI has been built.
 
@@ -37,7 +37,7 @@ Playwright uses installed Chrome by default. For another environment, run `npx p
 
 Prices, names, sizes, condition, material, drop dates and availability in `src/lib/catalog.ts` are demonstration content, authorized by the project owner. Product photography is supplied brand imagery. Measurements deliberately say “Confirm on inquiry” instead of inventing measurements.
 
-Official email and social URLs are unset. Their links appear only when the corresponding environment variables are configured. Do not use the sample catalog as actual inventory without reviewing every item.
+The confirmed brand email, Instagram and Facebook are configured in src/lib/brand.ts and can be overridden with environment variables. Do not use the sample catalog as actual inventory without reviewing every item.
 
 Without Supabase credentials, forms validate and return a **preview** response. They explicitly say that nothing was sent, subscribed or saved. No personal information is persisted in browser storage. Only a successful live database submission shows “INQUIRY SENT.”
 
@@ -51,7 +51,7 @@ Without Supabase credentials, forms validate and return a **preview** response. 
 6. Set `NEXT_PUBLIC_CATALOG_SOURCE=supabase` and restart/redeploy. Until this flag is set, the local catalog remains the source. Once enabled, database errors show an error state instead of silently presenting sample inventory.
 7. Set verified contact variables and the production `NEXT_PUBLIC_SITE_URL`.
 
-The data service maps the products/product_images relationship to the same typed Product model used by every page. Public products include available, sold and archived pieces. Home, archive and sitemap revalidate after 60 seconds; shop and individual product views render on request.
+The data service maps the products/product_images relationship to the same typed Product model used by every page. Public products include available, sold and archived pieces. Home and sitemap revalidate after 60 seconds; shop and individual product views render on request.
 
 The schema includes categories, products, product_images, inquiries, newsletter_subscribers and a private admin_users table linked to Supabase Auth. Product updates automatically refresh updated_at.
 

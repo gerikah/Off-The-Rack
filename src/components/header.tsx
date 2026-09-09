@@ -8,7 +8,6 @@ import { Arrow } from "./ui";
 export const navigation = [
   ["Home", "/"],
   ["Shop", "/shop"],
-  ["Archive", "/archive"],
   ["About", "/about"],
   ["Contact", "/contact"],
 ];
@@ -43,10 +42,10 @@ export function Header() {
       <header className={`site-header ${scrolled ? "scrolled" : ""}`}>
         <Link href="/" className="header-logo" aria-label="Off The Rack home">
           <Image
-            src="/images/off-the-rack-logo.webp"
+            src="/images/star-off-the-rack-logo-favicon.webp"
             alt="Off The Rack"
-            width={115}
-            height={65}
+            width={52}
+            height={52}
             preload
           />
         </Link>

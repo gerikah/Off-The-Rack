@@ -1,10 +1,11 @@
 import Image from "next/image";
 import type { Metadata } from "next";
-import { Arrow, BrandStar, Button, Marquee } from "@/components/ui";
+import { Arrow, Button } from "@/components/ui";
+
 export const metadata: Metadata = { title: "Our story" };
 export default function AboutPage() {
   return (
-    <div className="about-page">
+    <div className="about-page about-textured">
       <section className="about-hero">
         <div className="about-hero-copy">
           <span className="eyebrow">OFF THE RACK / OUR STORY</span>
@@ -20,104 +21,72 @@ export default function AboutPage() {
             <br />
             One piece at a time.
           </p>
-          <BrandStar />
+          <Button href="/inquiry?type=custom" className="button-light">
+            Make it personal
+          </Button>
         </div>
         <div className="about-hero-image">
           <Image
-            src="/images/feature-jacket-1.webp"
-            alt="Hand-painted red and white artwork on the back of reworked black denim"
+            src="/images/feature-jacket-1-no-bg.webp"
+            alt="Back view of Feature Jacket 1, with hand-painted red and white artwork on black denim"
             fill
             preload
-            sizes="(max-width: 767px) 100vw, 60vw"
+            sizes="(max-width: 767px) 100vw, 55vw"
           />
-          <span className="eyebrow">
-            A SECOND LIFE. AN ORIGINAL EXPRESSION.
-          </span>
+          <span className="eyebrow">HAND PAINTED / ONE OF ONE</span>
         </div>
       </section>
       <section className="section-wrap manifesto">
-        <span className="eyebrow">01 / WHY IT EXISTS</span>
+        <span className="eyebrow">01 / WHY WE MAKE</span>
         <div>
           <h2 className="display">
-            CLOTHES WITH
+            A SECOND LIFE.
             <br />
-            SOMETHING TO SAY.
+            YOUR OWN EXPRESSION.
           </h2>
           <p>
-            Off The Rack began with a simple belief: an existing piece can
-            become something entirely new. We select denim with character, then
-            give it a new identity through hand-painted artwork.
+            We select denim with character and give it a new identity through
+            hand-painted artwork. Each garment carries its own history. Every
+            brushstroke adds something new.
           </p>
-          <p>
-            It’s personal. A little raw. Never mass-produced. We’re here for the
-            people who see clothing as an extension of themselves.
-          </p>
+          <p>Small drops. Individual pieces. Made to be worn your way.</p>
         </div>
       </section>
-      <div className="about-wide-image">
-        <Image
-          src="/images/blue-cybersigilisim-denim-hoodie-jacket.webp"
-          alt="Front and back views of a hand-painted cobalt blue cybersigil denim hoodie"
-          fill
-          sizes="100vw"
-        />
-        <span className="eyebrow">02 / HAND PAINTED. EVERY SINGLE TIME.</span>
-      </div>
-      <section className="section-wrap philosophy">
-        <div>
-          <span className="eyebrow">03 / ONE OF ONE</span>
-          <h2 className="display">
-            THE IMPERFECTIONS
-            <br />
-            ARE THE POINT.
-          </h2>
-        </div>
-        <div>
-          <BrandStar />
-          <p>
-            A brushstroke that can’t be repeated. Denim that carries its own
-            history. Every variation makes the piece what it is: yours, and
-            yours alone.
-          </p>
-          <p>Small drops. Individual pieces. No repeats.</p>
-        </div>
-      </section>
-      <Marquee reverse />
       <section className="section-wrap process-section">
         <div className="section-heading">
-          <span className="eyebrow">04 / THE PROCESS</span>
-          <span className="eyebrow">FROM AN IDEA TO SOMETHING YOU WEAR</span>
+          <span className="eyebrow">02 / THE PROCESS</span>
+          <span className="eyebrow">MADE BY HAND, FROM START TO FINISH</span>
         </div>
         <h2 className="display">MADE WITH INTENTION.</h2>
         <div className="process-grid">
           {[
             [
-              "Idea",
-              "It starts with a reference, a feeling, or a story you want to tell.",
+              "Select",
+              "Denim with character. A garment worth giving a second life.",
             ],
             [
               "Design",
-              "We find the garment and map the artwork to its shape and character.",
+              "An idea, shaped around the piece and the person who will wear it.",
             ],
+            ["Paint", "Artwork applied by hand, one layer at a time."],
             [
-              "Hand painting",
-              "Layer by layer, the idea takes shape directly on the fabric.",
-            ],
-            [
-              "Finished piece",
-              "The final details bring it together. One garment. A new identity.",
+              "Wear",
+              "The finished piece. Personal, expressive, and one of one.",
             ],
           ].map(([title, copy], i) => (
             <div key={title}>
               <span className="eyebrow">
-                0{i + 1} <Arrow />
+                0{i + 1}
+                <Arrow />
               </span>
               <h3>{title}</h3>
               <p>{copy}</p>
             </div>
           ))}
         </div>
-        <Button href="/inquiry?type=custom">Let’s make your piece</Button>
+        <Button href="/shop" className="button-light">
+          Find your piece
+        </Button>
       </section>
     </div>
   );

@@ -1,34 +1,30 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getProducts } from "@/lib/products";
-import {
-  Arrow,
-  BrandStar,
-  Button,
-  Marquee,
-  SectionHeading,
-} from "@/components/ui";
+import { Arrow, Button, Marquee, SectionHeading } from "@/components/ui";
 import { ProductCard } from "@/components/product-card";
 
 export const revalidate = 60;
 export default async function HomePage() {
   const products = await getProducts();
   const arrivals = products.filter((p) => p.featured).slice(0, 3);
-  const bestsellers = products.filter((p) => p.bestseller).slice(0, 5);
+  const featuredWorks = products
+    .filter((p) => p.featured || p.bestseller)
+    .slice(0, 5);
   return (
     <>
-      <section className="hero">
+      <section className="hero hero-textured">
         <div className="hero-topline">
           <span>INDEPENDENT CLOTHING LABEL</span>
           <span>HAND PAINTED IN THE PHILIPPINES ↗</span>
         </div>
         <div className="hero-photo">
           <Image
-            src="/images/feature-jacket-2.webp"
-            alt="Model wearing a black and crimson hand-painted spiderweb denim hoodie, back view"
+            src="/images/background.webp"
+            alt=""
             fill
             preload
-            sizes="(max-width: 767px) 100vw, 65vw"
+            sizes="100vw"
           />
         </div>
         <div className="hero-copy">
@@ -51,12 +47,11 @@ export default async function HomePage() {
             <Button href="/shop" className="button-light">
               Shop collection
             </Button>
-            <Link className="text-link" href="/archive">
-              View archive <Arrow diagonal />
+            <Link className="text-link" href="/about">
+              Our story <Arrow diagonal />
             </Link>
           </div>
         </div>
-        <BrandStar className="hero-star" />
         <div className="hero-photo-caption">
           <span className="eyebrow">STUDY 01 — THE REWORK</span>
           <span>
@@ -91,7 +86,6 @@ export default async function HomePage() {
             <Link className="text-link" href="/shop">
               View all pieces <Arrow diagonal />
             </Link>
-            <BrandStar />
           </div>
           <div className="arrival-products">
             {arrivals.map((product) => (
@@ -146,34 +140,31 @@ export default async function HomePage() {
         </div>
       </section>
       <Marquee reverse />
-      <section className="section-wrap best-section">
-        <SectionHeading index="03" label="THE CROWD FAVORITES">
+      <section className="section-wrap featured-section">
+        <SectionHeading index="03" label="SELECTED WORKS">
           <Link href="/shop" className="text-link">
             Explore the collection <Arrow diagonal />
           </Link>
         </SectionHeading>
-        <div className="bestseller-grid">
-          <div className="bestseller-intro">
+        <div className="featured-grid">
+          <div className="featured-intro">
             <span className="eyebrow">GOOD PIECES FIND THEIR PEOPLE.</span>
             <h2 className="display">
-              BEST
+              FEATURED
               <br />
-              SELLERS<span className="heading-dot">.</span>
+              WORKS<span className="heading-dot">.</span>
             </h2>
             <p>
-              The pieces you keep coming back to.
+              A selection of hand-painted originals.
               <br />
               Each one, still the only one.
             </p>
-            <span className="outline-star" aria-hidden="true">
-              ✳
-            </span>
           </div>
-          {bestsellers.map((product, i) => (
+          {featuredWorks.map((product, i) => (
             <ProductCard
               product={product}
               key={product.id}
-              className={`best-card best-card-${i}`}
+              className={`featured-card featured-card-${i}`}
             />
           ))}
           <Link href="/inquiry?type=custom" className="custom-tile">
@@ -185,7 +176,6 @@ export default async function HomePage() {
             />
             <div className="custom-content">
               <span className="eyebrow">YOUR IDEA. OUR CANVAS.</span>
-              <BrandStar />
               <h3 className="display">
                 HAVE A DESIGN
                 <br />
