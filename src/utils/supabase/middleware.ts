@@ -14,6 +14,10 @@ export async function updateSession(request: NextRequest) {
 
   const responseHeaders: Record<string, string> = {};
   const supabase = createServerClient<Database>(url, key, {
+    cookieOptions: {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
     cookies: {
       getAll() {
         return request.cookies.getAll();

@@ -9,6 +9,18 @@ export function createClient(cookieStore: Awaited<ReturnType<typeof cookies>>) {
     (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
     {
+      cookieOptions: {
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      },
+      global: {
+        fetch: (url, options) =>
+          fetch(url, {
+            ...options,
+            cache: "no-store",
+            signal: options?.signal || AbortSignal.timeout(15000),
+          }),
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();

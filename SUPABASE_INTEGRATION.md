@@ -1,5 +1,7 @@
 # Supabase integration report
 
+This report records the storefront integration checkpoint. Admin functionality was added afterward; see [ADMIN_SETUP.md](ADMIN_SETUP.md) for current admin setup and authorization.
+
 Implemented the existing database schema as the sole storefront inventory source. The existing theme, photography, typography, animations, navigation and product/editorial components are preserved. No admin UI, live seed data, schema changes or RLS changes were applied.
 
 ## Files created

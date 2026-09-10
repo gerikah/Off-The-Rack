@@ -277,16 +277,14 @@ test("errors are branded and invalid submissions never reach customer tables", a
   await expect(page.getByLabel("Full name")).toHaveValue("Integration Test");
   await expect(page.locator("body")).not.toContainText("PRIVATE SQL");
 });
-test("mobile menu, removed demo and reserved admin routes", async ({
-  page,
-}) => {
+test("mobile menu and removed demo route", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
   await page.getByRole("button", { name: "Open menu" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
-  for (const route of ["/todos", "/admin/products/new"]) {
+  for (const route of ["/todos"]) {
     await page.goto(route);
     await expect(
       page.getByRole("heading", { name: "THIS RACK IS EMPTY." }),

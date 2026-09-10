@@ -6,6 +6,7 @@ import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "./globals.css";
+import { SiteChrome } from "@/components/site-chrome";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { NewsletterForm } from "@/components/newsletter-form";
@@ -39,15 +40,22 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body id="top">
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <Header />
-        <main id="main">{children}</main>
-        <NewsletterForm />
-        <Footer />
+        <SiteChrome
+          header={<Header />}
+          footer={
+            <>
+              <NewsletterForm />
+              <Footer />
+            </>
+          }
+        >
+          {children}
+        </SiteChrome>
       </body>
     </html>
   );

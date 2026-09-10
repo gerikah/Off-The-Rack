@@ -54,74 +54,305 @@ const products = [
           created_at: timestamp,
         })),
 }));
+
+// Stateful Auth/PostgREST double for storefront and admin integration tests.
+const seedInquiries = ["new", "read", "replied", "resolved"].map(
+  (status, index) => ({
+    id: "30000000-0000-4000-8000-00000000000" + index,
+    customer_name: "Test Customer " + index,
+    email: "customer" + index + "@example.invalid",
+    mobile: index === 0 ? "09000000000" : null,
+    inquiry_type: index === 1 ? "custom" : index === 2 ? "general" : "product",
+    product_id: index === 0 || index === 3 ? products[0].id : null,
+    garment_type: index === 1 ? "Denim jacket" : null,
+    preferred_size: index === 1 ? "L" : null,
+    design_idea: index === 1 ? "Silver artwork on black denim." : null,
+    reference_url: index === 1 ? "https://example.invalid/reference" : null,
+    message: "Temporary inquiry for admin integration tests.",
+    status,
+    created_at: "2026-09-0" + (index + 1) + "T00:00:00Z",
+    updated_at: timestamp,
+  }),
+);
 let scenario = "populated",
   writes = [],
-  queries = [];
-const send = (res, status, data) => {
-  res.writeHead(status, { "content-type": "application/json" });
+  queries = [],
+  membership = true;
+let productRows = structuredClone(products),
+  categoryRows = structuredClone(categories),
+  inquiryRows = structuredClone(seedInquiries);
+const sessions = new Map();
+const send = (res, status, data, headers = {}) => {
+  res.writeHead(status, { "content-type": "application/json", ...headers });
   res.end(data === undefined ? undefined : JSON.stringify(data));
 };
+function userFor(email) {
+  return {
+    id:
+      email === "admin@example.invalid"
+        ? "40000000-0000-4000-8000-000000000000"
+        : "40000000-0000-4000-8000-000000000001",
+    email,
+    aud: "authenticated",
+    role: "authenticated",
+    app_metadata: { provider: "email", providers: ["email"] },
+    user_metadata: {},
+    created_at: timestamp,
+  };
+}
+function issueSession(email) {
+  const user = userFor(email),
+    now = Math.floor(Date.now() / 1000);
+  const encode = (value) =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+  const token =
+    encode({ alg: "HS256", typ: "JWT" }) +
+    "." +
+    encode({
+      sub: user.id,
+      email,
+      role: "authenticated",
+      aud: "authenticated",
+      iat: now,
+      exp: now + 3600,
+      session_id: crypto.randomUUID(),
+    }) +
+    "." +
+    Buffer.from("test-signature").toString("base64url");
+  sessions.set(token, user);
+  return {
+    access_token: token,
+    refresh_token: "test-refresh-token",
+    expires_in: 3600,
+    expires_at: now + 3600,
+    token_type: "bearer",
+    user,
+  };
+}
+function filterRows(rows, url) {
+  for (const key of [
+    "status",
+    "bestseller",
+    "slug",
+    "category_id",
+    "id",
+    "product_id",
+  ]) {
+    const filter = url.searchParams.get(key);
+    if (!filter) continue;
+    if (filter.startsWith("eq."))
+      rows = rows.filter((row) => String(row[key]) === filter.slice(3));
+    if (filter.startsWith("neq."))
+      rows = rows.filter((row) => String(row[key]) !== filter.slice(4));
+    if (filter.startsWith("in.("))
+      rows = rows.filter((row) =>
+        filter.slice(4, -1).split(",").includes(String(row[key])),
+      );
+  }
+  return rows;
+}
 createServer(async (req, res) => {
-  const url = new URL(req.url, "http://127.0.0.1:4318");
-  let text = "";
-  for await (const chunk of req) text += chunk;
-  const body = text ? JSON.parse(text) : {};
-  if (url.pathname === "/__control") {
-    if (req.method === "POST") {
-      scenario = body.scenario || "populated";
-      writes = [];
-      queries = [];
+  try {
+    const url = new URL(req.url, "http://127.0.0.1:4318");
+    let text = "";
+    for await (const chunk of req) text += chunk;
+    const body = text ? JSON.parse(text) : {};
+    if (url.pathname === "/__control") {
+      if (req.method === "POST") {
+        if (body.revokeMembership) {
+          membership = false;
+        } else {
+          scenario = body.scenario || "populated";
+          writes = [];
+          queries = [];
+          membership = true;
+          sessions.clear();
+          productRows = scenario === "empty" ? [] : structuredClone(products);
+          categoryRows = structuredClone(categories);
+          inquiryRows =
+            scenario === "empty" ? [] : structuredClone(seedInquiries);
+        }
+      }
+      return send(res, 200, {
+        scenario,
+        writes,
+        queries,
+        products: productRows,
+        categories: categoryRows,
+        inquiries: inquiryRows,
+      });
     }
-    return send(res, 200, { scenario, writes, queries });
-  }
-  if (url.pathname === "/health") return send(res, 200, { ok: true });
-  const table = url.pathname.split("/").pop();
-  queries.push({ table, method: req.method, search: url.search });
-  if (req.method === "POST") {
-    if (!["inquiries", "newsletter_subscribers"].includes(table))
-      return send(res, 403, { code: "42501", message: "write denied" });
-    if (scenario === "error")
-      return send(res, 403, {
-        code: "42501",
-        message: "PRIVATE SQL ERROR MUST NOT LEAK",
+    if (url.pathname === "/health") return send(res, 200, { ok: true });
+    const token = req.headers.authorization?.replace(/^Bearer /i, ""),
+      user = sessions.get(token),
+      admin = user?.email === "admin@example.invalid" && membership;
+    if (url.pathname === "/auth/v1/token") {
+      if (
+        body.password !== "test-password" ||
+        !["admin@example.invalid", "member@example.invalid"].includes(
+          body.email,
+        )
+      )
+        return send(res, 400, {
+          error_code: "invalid_credentials",
+          msg: "Invalid login credentials",
+        });
+      return send(res, 200, issueSession(body.email));
+    }
+    if (url.pathname === "/auth/v1/user")
+      return user
+        ? send(res, 200, user)
+        : send(res, 401, { code: "bad_jwt", msg: "Invalid token" });
+    if (url.pathname === "/auth/v1/logout") {
+      sessions.delete(token);
+      return send(res, 204);
+    }
+    const table = url.pathname.split("/").pop();
+    queries.push({
+      table,
+      method: req.method,
+      search: url.search,
+      admin: !!admin,
+    });
+    if (table === "otr_is_admin")
+      return user
+        ? send(res, 200, !!admin)
+        : send(res, 401, { code: "42501", message: "denied" });
+    if (table === "otr_delete_product") {
+      if (!admin) return send(res, 403, { code: "42501", message: "denied" });
+      if (inquiryRows.some((row) => row.product_id === body.product_uuid))
+        return send(res, 409, { code: "23503", message: "related inquiries" });
+      productRows = productRows.filter((row) => row.id !== body.product_uuid);
+      writes.push({
+        table: "products",
+        method: "DELETE",
+        body: { id: body.product_uuid },
       });
-    if (
-      table === "newsletter_subscribers" &&
-      writes.some((w) => w.table === table && w.body.email === body.email)
-    )
-      return send(res, 409, {
-        code: "23505",
-        message: "PRIVATE duplicate constraint",
-      });
-    writes.push({ table, body });
-    return send(res, 201);
-  }
-  if (table === "categories") return send(res, 200, categories);
-  if (table === "products") {
-    if (scenario === "error")
+      return send(res, 204);
+    }
+    if (table === "admin_users")
+      return send(res, 403, { code: "42501", message: "denied" });
+    if (["POST", "PATCH", "DELETE"].includes(req.method)) {
+      const publicInsert =
+        req.method === "POST" &&
+        ["inquiries", "newsletter_subscribers"].includes(table);
+      if (!admin && !publicInsert)
+        return send(res, 403, { code: "42501", message: "denied" });
+      if (scenario === "error")
+        return send(res, 403, {
+          code: "42501",
+          message: "PRIVATE SQL ERROR MUST NOT LEAK",
+        });
+      if (
+        table === "newsletter_subscribers" &&
+        writes.some((w) => w.table === table && w.body.email === body.email)
+      )
+        return send(res, 409, {
+          code: "23505",
+          message: "PRIVATE duplicate constraint",
+        });
+      let rows =
+        table === "products"
+          ? productRows
+          : table === "categories"
+            ? categoryRows
+            : inquiryRows;
+      let changed = [];
+      if (req.method === "POST") {
+        if (
+          ["products", "categories"].includes(table) &&
+          rows.some((row) => row.slug === body.slug)
+        )
+          return send(res, 409, { code: "23505", message: "duplicate slug" });
+        const row = {
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...body,
+        };
+        if (table !== "newsletter_subscribers") rows.push(row);
+        changed = [row];
+      } else {
+        changed = filterRows(rows, url);
+        if (req.method === "PATCH")
+          for (const row of changed) Object.assign(row, body);
+        if (req.method === "DELETE") {
+          if (table === "categories")
+            for (const row of productRows)
+              if (changed.some((category) => category.id === row.category_id))
+                row.category_id = null;
+          rows = rows.filter((row) => !changed.includes(row));
+          if (table === "categories") categoryRows = rows;
+          else if (table === "products") productRows = rows;
+        }
+      }
+      writes.push({ table, method: req.method, body });
+      if (url.searchParams.has("select"))
+        return send(
+          res,
+          req.method === "POST" ? 201 : 200,
+          req.headers.accept?.includes("vnd.pgrst.object+json")
+            ? changed[0]
+            : changed,
+        );
+      return send(res, req.method === "POST" ? 201 : 204);
+    }
+    if (["inquiries", "newsletter_subscribers"].includes(table) && !admin)
+      return send(res, 403, { code: "42501", message: "denied" });
+    if (table === "products" && scenario === "error")
       return send(res, 503, {
         code: "XX000",
         message: "PRIVATE SQL ERROR MUST NOT LEAK",
       });
-    let rows = scenario === "empty" ? [] : [...products];
-    for (const key of ["status", "bestseller", "slug", "category_id", "id"]) {
-      const filter = url.searchParams.get(key);
-      if (!filter) continue;
-      if (filter.startsWith("eq."))
-        rows = rows.filter((p) => String(p[key]) === filter.slice(3));
-      if (filter.startsWith("neq."))
-        rows = rows.filter((p) => String(p[key]) !== filter.slice(4));
-      if (filter.startsWith("in.("))
-        rows = rows.filter((p) =>
-          filter.slice(4, -1).split(",").includes(String(p[key])),
-        );
-    }
-    rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    let rows =
+      table === "products"
+        ? productRows
+        : table === "categories"
+          ? categoryRows
+          : table === "inquiries"
+            ? inquiryRows
+            : [];
+    rows = filterRows([...rows], url);
+    const count = rows.length;
+    const order = url.searchParams.get("order") || "";
+    if (order.startsWith("name"))
+      rows.sort((a, b) => a.name.localeCompare(b.name));
+    else
+      rows.sort((a, b) =>
+        (order.startsWith("updated_at")
+          ? b.updated_at
+          : b.created_at
+        ).localeCompare(
+          order.startsWith("updated_at") ? a.updated_at : a.created_at,
+        ),
+      );
     rows = rows.slice(Number(url.searchParams.get("offset") || 0));
     if (url.searchParams.has("limit"))
       rows = rows.slice(0, Number(url.searchParams.get("limit")));
-    if (url.searchParams.get("select") === "id")
-      rows = rows.map((p) => ({ id: p.id }));
+    const select = url.searchParams.get("select") || "*";
+    if (table === "products")
+      rows = rows.map((row) => ({
+        ...row,
+        category: categoryRows.find((c) => c.id === row.category_id) || null,
+        images: row.images || [],
+      }));
+    if (table === "categories" && select.includes("products(count)"))
+      rows = rows.map((row) => ({
+        ...row,
+        products: [
+          { count: productRows.filter((p) => p.category_id === row.id).length },
+        ],
+      }));
+    if (table === "inquiries" && select.includes("product:products"))
+      rows = rows.map((row) => ({
+        ...row,
+        product: productRows.find((p) => p.id === row.product_id) || null,
+      }));
+    if (select === "id") rows = rows.map((row) => ({ id: row.id }));
+    const headers = {
+      "content-range": "0-" + Math.max(0, rows.length - 1) + "/" + count,
+    };
+    if (req.method === "HEAD") return send(res, 200, undefined, headers);
     if (req.headers.accept?.includes("vnd.pgrst.object+json"))
       return send(
         res,
@@ -131,8 +362,13 @@ createServer(async (req, res) => {
           details: "The result contains 0 rows",
           message: "not found",
         },
+        headers,
       );
-    return send(res, 200, rows);
+    return send(res, 200, rows, headers);
+  } catch {
+    send(res, 500, {
+      code: "fixture_error",
+      message: "Fixture request failed",
+    });
   }
-  return send(res, 404, { code: "missing" });
 }).listen(4318, "127.0.0.1");

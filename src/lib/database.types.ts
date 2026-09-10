@@ -25,6 +25,7 @@ type Table<
 export type Database = {
   public: {
     Tables: {
+      admin_users: Table<{ id: string; created_at: string }, "id">;
       categories: Table<Category, "name" | "slug">;
       products: Table<
         ProductRow,
@@ -68,7 +69,13 @@ export type Database = {
       newsletter_subscribers: Table<NewsletterSubscriber, "email">;
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      otr_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      otr_delete_product: {
+        Args: { product_uuid: string };
+        Returns: undefined;
+      };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };

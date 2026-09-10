@@ -28,7 +28,7 @@ Playwright starts an isolated Next.js development server on port 3100 and a loca
 - src/lib/data/newsletter.ts inserts email/is_active=true. A unique-email conflict produces the inline already-on-the-list message, with no customer-list query or upsert. Existing inactive subscriptions are not reactivated.
 - src/lib/validation.ts is shared browser/server validation; consent and honeypot values are validated but are not nonexistent database columns.
 - src/lib/product-utils.ts holds PHP formatting and image helpers; src/components/product-image.tsx falls back after a failed image load.
-- src/lib/supabase.ts is the typed, stateless, server-only public client used for storefront queries and inserts under public RLS. Cookie-aware browser/server clients remain in src/utils/supabase for future Auth features. src/proxy.ts retains session refresh. No admin authorization or UI is implemented; existing /admin/* routes remain reserved.
+- src/lib/supabase.ts is the typed, stateless, server-only public client used for storefront queries and inserts under public RLS. Cookie-aware browser/server clients remain in src/utils/supabase for future Auth features. src/proxy.ts retains session refresh. The admin workspace now uses these cookie-aware clients. See ADMIN_SETUP.md for the allowlist, policies and first-account setup.
 
 Database errors are logged in development as an operation and error code only. Customers receive branded errors without raw SQL, credentials, stack traces or internal messages. Empty results are normal, distinct from connection errors. Missing credentials do not produce fake success or sample products.
 
@@ -42,7 +42,7 @@ Database errors are logged in development as an operation and error code only. C
 - /api/inquiries and /api/newsletter: validated inserts; size limits, honeypot checks, generic failure messages. Form controls lock during submission to prevent repeated-click duplicates.
 - /sitemap.xml: database product links plus public routes including Archive.
 
-The /todos route, static product/category arrays, catalog-source flag, mock catalog export script and RPC demo submission paths were removed. Permanent public/images assets stay local.
+The /todos route, static product/category arrays, catalog-source flag, mock catalog export script and RPC demo submission paths were removed. Permanent public/images assets stay local. The admin workspace is implemented separately, with product image placeholders only.
 
 ## Environment
 
@@ -76,3 +76,9 @@ Inquiries are stored only; there are no email notifications, newsletter campaign
 Vercel uses the Next.js preset and npm run build. Configure public environment variables and redeploy; missing credentials show an unavailable state rather than mock inventory.
 
 References: [Supabase typed clients](https://supabase.com/docs/reference/javascript/typescript-support), [joined queries](https://supabase.com/docs/guides/database/joins-and-nesting), [inserts](https://supabase.com/docs/reference/javascript/insert). Version-specific Next.js guides are bundled in node_modules/next/dist/docs/.
+
+## Admin workspace
+
+The admin routes now implement email/password sign-in, server-verified allowlist authorization, dashboard counts, product CRUD/status actions, category management and inquiry details/status updates. Apply only supabase/migrations/002_admin_access.sql and create the first Auth user manually using the exact instructions in [ADMIN_SETUP.md](ADMIN_SETUP.md). Admin writes have been tested against an isolated local fixture, not the live project. Image uploads, Storage writes, email sending and newsletter management are intentionally absent.
+
+The cookie-aware clients use SameSite=Lax cookies with Secure enabled in production; deploy over HTTPS. The stateless storefront client remains public and does not inherit admin sessions.
