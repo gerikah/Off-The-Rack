@@ -1,16 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getProducts } from "@/lib/products";
+import { getNewArrivals, getBestsellers } from "@/lib/data/products";
 import { Arrow, Button, Marquee, SectionHeading } from "@/components/ui";
 import { ProductCard } from "@/components/product-card";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 export default async function HomePage() {
-  const products = await getProducts();
-  const arrivals = products.filter((p) => p.featured).slice(0, 3);
-  const featuredWorks = products
-    .filter((p) => p.featured || p.bestseller)
-    .slice(0, 5);
+  const [arrivals, featuredWorks] = await Promise.all([
+    getNewArrivals(3),
+    getBestsellers(5),
+  ]);
   return (
     <>
       <section className="hero hero-textured">
@@ -88,6 +87,12 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="arrival-products">
+            {!arrivals.length && (
+              <div className="empty-state">
+                <h3 className="display">NEW PIECES COMING SOON.</h3>
+                <p>Check back for the next drop.</p>
+              </div>
+            )}
             {arrivals.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -160,6 +165,11 @@ export default async function HomePage() {
               Each one, still the only one.
             </p>
           </div>
+          {!featuredWorks.length && (
+            <div className="empty-state">
+              <p>No bestseller products yet.</p>
+            </div>
+          )}
           {featuredWorks.map((product, i) => (
             <ProductCard
               product={product}

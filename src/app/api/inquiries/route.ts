@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { inquirySchema } from "@/lib/validation";
-import { getSupabase } from "@/lib/supabase";
+import { createInquiry } from "@/lib/data/inquiries";
 
 export async function POST(request: Request) {
   if (Number(request.headers.get("content-length") || 0) > 16000)
@@ -34,20 +34,13 @@ export async function POST(request: Request) {
       { error: "We couldn’t accept this inquiry." },
       { status: 400 },
     );
-  const client = getSupabase();
-  if (!client) return NextResponse.json({ mode: "preview" });
-  const { website: _website, consent, ...payload } = parsed.data;
-  void _website;
-  const { error } = await client.rpc("submit_inquiry", {
-    payload: { ...payload, consent },
-  });
-  if (error)
+  try {
+    await createInquiry(parsed.data);
+    return NextResponse.json({ mode: "live" }, { status: 201 });
+  } catch {
     return NextResponse.json(
-      {
-        error:
-          "We couldn’t send your inquiry. Please wait a minute and try again.",
-      },
+      { error: "We couldn't send your inquiry. Please try again shortly." },
       { status: 503 },
     );
-  return NextResponse.json({ mode: "live" }, { status: 201 });
+  }
 }

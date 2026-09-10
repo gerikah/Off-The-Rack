@@ -1,19 +1,14 @@
-# OFF THE RACK — development & handoff
+# OFF THE RACK - development and handoff
 
-The storefront is a Next.js App Router application with React, TypeScript, plain CSS design tokens, self-hosted Inter and Barlow Condensed fonts, and a prepared Supabase data layer. All photographs and chrome branding come from the supplied assets.
+Next.js App Router, React, TypeScript, the existing chrome theme, local fonts, photography, animations and responsive components are preserved. Supabase is now the only inventory source.
 
-## Run locally
+## Run and validate
 
-Use Node.js 22 or newer and npm.
+Use Node.js 22+ and npm (npm.cmd in PowerShell if needed).
 
 ```sh
 npm ci
 npm run dev
-```
-
-Open http://localhost:3000. In PowerShell environments with restricted script execution, use `npm.cmd` instead of `npm`.
-
-```sh
 npm run typecheck
 npm run lint
 npm run build
@@ -21,68 +16,63 @@ npm run start
 npm test
 ```
 
-Playwright uses installed Chrome by default. For another environment, run `npx playwright install chromium` and change the channel setting in `playwright.config.ts`, or set `PLAYWRIGHT_CHANNEL=msedge` for installed Edge. Tests intentionally run against the unconnected preview catalog. Do not point them at a live customer database.
+Playwright starts an isolated Next.js development server on port 3100 and a local PostgREST test double on 4318. It overrides Supabase credentials only for that test process. Tests never insert into the live project. Installed Chrome is the default; set PLAYWRIGHT_CHANNEL=msedge for Edge. Do not run a second Next.js development server in this checkout while running the suite.
 
-## What is implemented
+## Data access and future admin
 
-- Home: campaign hero, two reduced-motion-aware marquees, swipeable arrivals on mobile, photography-led brand story, editorial featured-works grid, custom-order tile, newsletter.
-- Shop: availability and category filters, name/color/category search, price/date sorting, empty state and reset.
-- Product: gallery controls, availability, price, sizing, condition, material, details, measurements, care, delivery and customization accordions, related pieces.
-- Inquiry: product preselection via URL, conditional custom fields, browser and server validation, consent, pending/error/success states.
-- About, Contact, custom 404 and error pages, loading state, metadata, sitemap and robots.
-- Sticky navigation, native modal mobile menu with focus containment and Escape support, skip link, keyboard focus styles, responsive layouts.
-- All `/admin/*` routes are reserved and return the branded not-found page. No admin dashboard or authentication UI has been built.
+- src/lib/types.ts represents Category, ProductRow, Product with joined category/images, ProductImage, Inquiry and NewsletterSubscriber. Optional descriptive database fields are nullable.
+- src/lib/database.types.ts defines typed rows/inserts/updates and foreign keys for all five existing tables. There was no linked CLI type-generation workflow, so these are maintained locally. Confirm actual constraints/defaults when extending the admin; replace this file with Supabase CLI-generated types once that workflow exists.
+- src/lib/data/products.ts provides getProducts, getAvailableProducts, getNewArrivals, getBestsellers, getArchivedProducts, getProductBySlug and getRelatedProducts. Queries join categories and product_images, paginate the product catalog, and order by creation date descending. React cache deduplicates reads within a render; requests use no-store so later inventory edits appear on the next request.
+- src/lib/data/categories.ts loads database categories for Shop filters.
+- src/lib/data/inquiries.ts validates and inserts product/custom/general inquiries. It verifies referenced products, explicitly maps inquiry_type, clears irrelevant custom/product fields, sets status=new, and never requests customer rows back.
+- src/lib/data/newsletter.ts inserts email/is_active=true. A unique-email conflict produces the inline already-on-the-list message, with no customer-list query or upsert. Existing inactive subscriptions are not reactivated.
+- src/lib/validation.ts is shared browser/server validation; consent and honeypot values are validated but are not nonexistent database columns.
+- src/lib/product-utils.ts holds PHP formatting and image helpers; src/components/product-image.tsx falls back after a failed image load.
+- src/lib/supabase.ts is the typed, stateless, server-only public client used for storefront queries and inserts under public RLS. Cookie-aware browser/server clients remain in src/utils/supabase for future Auth features. src/proxy.ts retains session refresh. No admin authorization or UI is implemented; existing /admin/* routes remain reserved.
 
-## Placeholder content
+Database errors are logged in development as an operation and error code only. Customers receive branded errors without raw SQL, credentials, stack traces or internal messages. Empty results are normal, distinct from connection errors. Missing credentials do not produce fake success or sample products.
 
-Prices, names, sizes, condition, material, drop dates and availability in `src/lib/catalog.ts` are demonstration content, authorized by the project owner. Product photography is supplied brand imagery. Measurements deliberately say “Confirm on inquiry” instead of inventing measurements.
+## Connected routes
 
-The confirmed brand email, Instagram and Facebook are configured in src/lib/brand.ts and can be overridden with environment variables. Do not use the sample catalog as actual inventory without reviewing every item.
+- /: three newest available pieces; up to five bestsellers with status available or sold, using the existing editorial featured-works layout and custom tile.
+- /shop: joined catalog and dynamic categories; immediate client-side status/category/search filters and date/price sorting. Sold and archived products remain visible.
+- /archive: sold/archived products, newest first, with an editorial staggered composition using existing cards and typography.
+- /product/[slug]: slug lookup, primary-first gallery, populated metadata only, related available pieces preferring the same category, status-aware inquiry CTA, Next.js notFound for missing slugs.
+- /inquiry?product=[slug]: selected product and product_id association. /inquiry?type=custom: custom fields. Otherwise general inquiry. A valid selected product takes precedence if both URL parameters are supplied.
+- /api/inquiries and /api/newsletter: validated inserts; size limits, honeypot checks, generic failure messages. Form controls lock during submission to prevent repeated-click duplicates.
+- /sitemap.xml: database product links plus public routes including Archive.
 
-Without Supabase credentials, forms validate and return a **preview** response. They explicitly say that nothing was sent, subscribed or saved. No personal information is persisted in browser storage. Only a successful live database submission shows “INQUIRY SENT.”
+The /todos route, static product/category arrays, catalog-source flag, mock catalog export script and RPC demo submission paths were removed. Permanent public/images assets stay local.
 
-## Supabase setup
+## Environment
 
-1. Copy `.env.example` to `.env.local`.
-2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to the project's public URL and publishable key. `NEXT_PUBLIC_SUPABASE_ANON_KEY` remains supported as a legacy fallback. Never use a service-role or secret key in these variables.
-3. Apply `supabase/migrations/001_storefront.sql` to a fresh Supabase project.
-4. Add verified categories, products and product_images. `npm run catalog:export` creates **sample-only** import SQL in `.work/seed.sample.sql` if you want to inspect the placeholder data shape. Do not import that data into a real storefront without approval.
-5. Keep local public image paths, or upload photos to Supabase Storage and use public HTTPS URLs from your configured project's storage endpoint. The Next.js config allows only that project's public storage path.
-6. Set `NEXT_PUBLIC_CATALOG_SOURCE=supabase` and restart/redeploy. Until this flag is set, the local catalog remains the source. Once enabled, database errors show an error state instead of silently presenting sample inventory.
-7. Set verified contact variables and the production `NEXT_PUBLIC_SITE_URL`.
+Keep existing credentials in .env.local (ignored by Git) and configure the same values in the deployment environment:
 
-Cookie-aware clients live in `src/utils/supabase/client.ts` (browser) and `src/utils/supabase/server.ts` (server). Pass `await cookies()` from `next/headers` to the server helper. Next.js 16 uses `src/proxy.ts` to call the session-refresh helper in `src/utils/supabase/middleware.ts`; it validates claims and propagates refreshed cookies to both the request and response. This does not add login screens or protect routes.
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+- NEXT_PUBLIC_SUPABASE_ANON_KEY: legacy fallback only
+- NEXT_PUBLIC_SITE_URL: canonical deployment URL for metadata/sitemap
+- Existing optional NEXT_PUBLIC_CONTACT_EMAIL, NEXT_PUBLIC_INSTAGRAM_URL, NEXT_PUBLIC_FACEBOOK_URL and NEXT_PUBLIC_TIKTOK_URL overrides
 
-The `/todos` example reads `id` and `name` from an existing `todos` table using the server client. Create that table and configure its RLS policies in Supabase before expecting results; the storefront migration does not create it. Query failures display an unavailable state. The home page continues to show the storefront.
+NEXT_PUBLIC_CATALOG_SOURCE is obsolete and ignored. Supabase is always the catalog source. No service-role or secret key is used or needed.
 
-The data service maps the products/product_images relationship to the same typed Product model used by every page. Public products include available, sold and archived pieces. Home and sitemap revalidate after 60 seconds; shop and individual product views render on request.
+## Existing Supabase project: manual setup
 
-The schema includes categories, products, product_images, inquiries, newsletter_subscribers and a private admin_users table linked to Supabase Auth. Product updates automatically refresh updated_at.
+The five application tables and RLS already exist; no schema or policy changes are applied by this work. Do not rerun supabase/migrations/001_storefront.sql: it is a historical, incompatible schema retained only for reference.
 
-Public visitors can only read catalog data. Customer tables have RLS enabled and no anonymous read or direct-write grants. Two narrowly scoped security-definer functions accept validated submissions. Inquiry writes are throttled to one per email per minute with a transaction lock. Client-provided inquiry status/timestamps are ignored. Newsletter submissions are idempotent and do not disclose existing addresses or silently re-subscribe unsubscribed records.
+1. Add verified inventory through Supabase until the future admin is built. Categories already exist. Empty inventory intentionally shows branded empty states.
+2. Ensure newsletter_subscribers.email has a unique constraint/index for duplicate handling. Do not grant public SELECT on customer tables. Keep public catalog reads and inquiry/newsletter inserts as currently configured.
+3. In Supabase Storage, create the product-images bucket manually if absent. For this public storefront, product photos need public read URLs. Do not grant public uploads, updates or deletes; future admin access requires separate authorization and policies. The application does not create buckets or alter storage policies.
+4. Store public URLs in product_images.image_url, object paths in storage_path, descriptions in alt_text, image order in sort_order, and the preferred cover in is_primary. Images are sorted ascending; the first marked primary is promoted to the gallery cover, preserving the remaining order. With no primary, the first sorted image is used.
+5. Images may use existing /images/ assets or HTTPS public URLs from this project's product-images bucket. Unrecognized/missing URLs and failed loads use the existing background image. External image providers would require explicitly extending both the helper and Next.js remotePatterns allowlist.
+6. Optional supabase/seed.development.sql creates four clearly temporary development examples using existing categories, with no overwrites. It has NOT been applied to the live project. It assumes the documented text status columns; inspect against the development schema first.
 
-Server-side routes add schema validation, input-size limits and a honeypot. These measures are not a full anti-abuse service: add an appropriate production CAPTCHA/rate-limiting provider before opening public submissions at scale. The migration is prepared for a fresh Supabase instance; verify its permissions in a staging project before launch.
+No live customer submissions are made by the automated suite. Successful tests of the local double prove application mapping and interaction, not live RLS writes. A live end-to-end submission can be performed manually with an identifiable test record if desired.
 
-## Email and operations
+## Operations and assets
 
-Successful live inquiries are stored in Supabase. This project does not yet send notification emails, reserve inventory, collect payments or deliver newsletter campaigns. Handle inquiries through the database until the future admin is implemented. Connect a mailing provider with consent/unsubscribe handling before sending campaigns; newsletter success confirms receipt of a request, not delivery of an email.
+Inquiries are stored only; there are no email notifications, newsletter campaigns, payments or reservations yet. Existing logos, hero/background images, textures and editorial photography remain in the repository. Original assets are in assets/ and optimized images in public/images/; npm run assets regenerates them. Typography, layout and responsive rules remain in src/app/globals.css.
 
-Before launch, confirm actual inventory and pricing, measurement/care details, contact channels, delivery/payment arrangements, customer-data retention and privacy copy.
+Vercel uses the Next.js preset and npm run build. Configure public environment variables and redeploy; missing credentials show an unavailable state rather than mock inventory.
 
-## Assets and styling
-
-- Original assets are preserved in `assets/`.
-- Optimized web assets are checked in under `public/images/`.
-- `npm run assets` regenerates WebP derivatives and the favicon using Sharp.
-- Fonts are bundled locally; the browser does not request Google Fonts.
-- Shared components live in `src/components/`, catalog and services in `src/lib/`, routes in `src/app/`.
-- Tokens and responsive styling live in `src/app/globals.css`.
-- `npm run format` formats the maintained source files.
-
-## Vercel
-
-Import the repository into Vercel, choose the Next.js preset, and use `npm run build`. No custom output directory or SPA rewrites are needed. Configure the public environment variables in Vercel and redeploy. With no database configuration, the deployed site remains a preview with non-sending forms.
-
-## Reference documentation
-
-Implementation references: [Next.js App Router](https://nextjs.org/docs), [Supabase Next.js setup](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs), and [Supabase row level security](https://supabase.com/docs/guides/database/postgres/row-level-security). Current Next.js guides are also bundled in `node_modules/next/dist/docs/`.
+References: [Supabase typed clients](https://supabase.com/docs/reference/javascript/typescript-support), [joined queries](https://supabase.com/docs/guides/database/joins-and-nesting), [inserts](https://supabase.com/docs/reference/javascript/insert). Version-specific Next.js guides are bundled in node_modules/next/dist/docs/.

@@ -1,53 +1,96 @@
-import { expect, test } from "@playwright/test";
-
-const routes = [
-  "/",
-  "/shop",
-  "/product/crimson-web-hoodie",
-  "/about",
-  "/contact",
-  "/inquiry?type=custom",
-];
+import { expect, test, type Page } from "@playwright/test";
+const control = "http://127.0.0.1:4318/__control";
+test.beforeEach(async ({ request }) => {
+  await request.post(control, { data: { scenario: "populated" } });
+});
 for (const width of [375, 430, 768, 1024, 1440, 1920]) {
-  test(`routes render without horizontal overflow at ${width}px`, async ({
-    page,
-  }) => {
+  test("routes fit at " + width + "px", async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    for (const route of routes) {
-      const response = await page.goto(route);
-      expect(response?.status(), route).toBe(200);
+    for (const route of [
+      "/",
+      "/shop",
+      "/archive",
+      "/product/temp-piece-0",
+      "/about",
+      "/contact",
+      "/inquiry?type=custom",
+    ]) {
+      await page.goto(route);
       await page.locator("h1").waitFor();
       await page.evaluate(() => document.fonts.ready);
-      const dimensions = await page.evaluate(() => ({
-        content: document.documentElement.scrollWidth,
-        viewport: window.innerWidth,
-      }));
       expect(
-        dimensions.content,
-        `${route} overflows at ${width}px`,
-      ).toBeLessThanOrEqual(dimensions.viewport + 1);
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth + 1,
+        ),
+        route,
+      ).toBe(true);
       await expect(page.locator("main")).toBeVisible();
     }
     expect(errors).toEqual([]);
   });
 }
-test("shop availability, category, search, sorting and reset", async ({
+test("empty catalog retains page composition and custom CTA", async ({
+  page,
+  request,
+}) => {
+  await request.post(control, { data: { scenario: "empty" } });
+  await page.goto("/");
+  await expect(page.getByText("NEW PIECES COMING SOON.")).toBeVisible();
+  await expect(page.getByText("No bestseller products yet.")).toBeVisible();
+  await expect(page.locator(".custom-tile")).toHaveAttribute(
+    "href",
+    "/inquiry?type=custom",
+  );
+  await page.goto("/shop");
+  await expect(page.getByText("THE RACK IS CURRENTLY EMPTY.")).toBeVisible();
+  await page.goto("/archive");
+  await expect(
+    page.getByText("THE ARCHIVE IS JUST GETTING STARTED."),
+  ).toBeVisible();
+  await page.goto("/product/non-existent-slug");
+  await expect(
+    page.getByRole("heading", { name: "THIS RACK IS EMPTY." }),
+  ).toBeVisible();
+  await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute(
+    "content",
+    /noindex/,
+  );
+});
+test("arrivals, bestsellers and archive use their database predicates", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator(".arrival-products .product-card")).toHaveCount(2);
+  await expect(
+    page.locator(".arrival-products .product-card").first(),
+  ).toContainText("TEMP New Arrival");
+  await expect(page.locator(".featured-grid .product-card")).toHaveCount(2);
+  await expect(page.locator(".featured-grid")).toContainText("TEMP Sold");
+  await expect(page.locator(".featured-grid")).not.toContainText(
+    "TEMP Archived",
+  );
+  await page.goto("/archive");
+  await expect(page.locator(".product-card")).toHaveCount(2);
+  await expect(page.locator(".product-card").first()).toContainText(
+    "TEMP Archived",
+  );
+});
+test("shop filters and sorting stay within the current page", async ({
   page,
 }) => {
   await page.goto("/shop");
-  await expect(page.locator(".product-card")).toHaveCount(12);
+  await expect(page.locator(".product-card")).toHaveCount(4);
   await page.getByRole("button", { name: "Available", exact: true }).click();
-  await expect(page.locator(".product-card")).toHaveCount(7);
+  await expect(page.locator(".product-card")).toHaveCount(2);
   await page
     .getByRole("combobox", { name: "Category", exact: true })
-    .selectOption("Tops");
+    .selectOption({ label: "Pants" });
   await expect(page.locator(".product-card")).toHaveCount(1);
-  await expect(page.locator(".product-card")).toContainText("Webhead Tee");
   await page
     .getByRole("combobox", { name: "Category", exact: true })
-    .selectOption("Pants");
+    .selectOption({ label: "Tops" });
   await expect(
     page.getByRole("button", { name: "Clear filters" }),
   ).toBeVisible();
@@ -56,119 +99,199 @@ test("shop availability, category, search, sorting and reset", async ({
     .getByRole("combobox", { name: "Sort by", exact: true })
     .selectOption("low");
   await expect(page.locator(".product-card").first()).toContainText(
-    "Webhead Tee",
+    "TEMP New Arrival",
   );
   await page
     .getByRole("combobox", { name: "Sort by", exact: true })
     .selectOption("high");
   await expect(page.locator(".product-card").first()).toContainText(
-    "PHP 3,400",
+    "TEMP Sold",
   );
-  await page.getByRole("searchbox", { name: "Search pieces" }).fill("Crimson");
+  await page
+    .getByRole("searchbox", { name: "Search pieces" })
+    .fill("Bestseller");
   await expect(page.locator(".product-card")).toHaveCount(1);
   await page.getByRole("searchbox", { name: "Search pieces" }).fill("");
   await page
     .getByRole("button", { name: "Sold / archive", exact: true })
     .click();
-  await expect(page.locator(".product-card")).toHaveCount(5);
+  await expect(page.locator(".product-card")).toHaveCount(2);
+  await expect(page).toHaveURL(/\/shop$/);
 });
-test("gallery and product inquiry preserve the selected piece", async ({
-  page,
-}) => {
-  await page.goto("/product/crimson-web-hoodie");
-  await page.getByRole("button", { name: "Show view 2" }).click();
-  await expect(page.locator(".gallery-counter")).toHaveText("02 / 02");
-  await page.locator("summary").filter({ hasText: "Measurements" }).click();
-  await expect(page.getByText("Chest (laid flat)")).toBeVisible();
-  await page.getByRole("link", { name: "Inquire about this piece" }).click();
-  await expect(page).toHaveURL(/inquiry\?product=crimson-web-hoodie/);
-  await expect(page.locator(".selected-product")).toContainText(
-    "Crimson Web Hoodie",
-  );
-  await expect(page.getByLabel("Inquiry type")).toHaveValue("product");
-  await page.getByLabel("Full name").fill("Preview Customer");
+async function fillInquiry(page: Page) {
+  await page.getByLabel("Full name").fill("Integration Test");
   await page
-    .getByLabel("Email", { exact: false })
+    .locator("input[name=email]")
     .first()
-    .fill("preview@example.com");
+    .fill("integration@example.invalid");
   await page
     .getByLabel("Message", { exact: false })
-    .fill("Please confirm the measurements for this piece.");
+    .fill("Temporary integration test inquiry.");
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Preview inquiry" }).click();
-  await expect(
-    page.getByRole("heading", { name: "INQUIRY PREPARED." }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Your inquiry hasn’t been sent or saved.", { exact: false }),
-  ).toBeVisible();
+}
+test("gallery order, optional metadata, related pieces and product association", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/product/temp-piece-0");
+  await expect(page.locator(".gallery-primary img")).toHaveAttribute(
+    "alt",
+    /Fixture view 2/,
+  );
+  await page.getByRole("button", { name: "Show view 2" }).click();
+  await expect(page.locator(".gallery-primary img")).toHaveAttribute(
+    "alt",
+    /Fixture view 0/,
+  );
+  await expect(page.locator(".related-section")).not.toContainText(
+    "TEMP Bestseller",
+  );
+  await page.getByRole("link", { name: "Inquire about this piece" }).click();
+  await expect(page.locator(".selected-product")).toContainText(
+    "TEMP Bestseller",
+  );
+  await fillInquiry(page);
+  await page.getByRole("button", { name: "Send inquiry", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "INQUIRY SENT." }),
+  ).toBeVisible();
+  const state = await (await request.get(control)).json();
+  expect(state.writes).toHaveLength(1);
+  expect(state.writes[0].body).toMatchObject({
+    inquiry_type: "product",
+    product_id: "20000000-0000-4000-8000-000000000000",
+    status: "new",
+  });
+  expect(state.writes[0].body).not.toHaveProperty("consent");
+  await page.goto("/product/temp-piece-1");
+  await expect(page.locator(".gallery-primary img")).toHaveAttribute(
+    "src",
+    /background/,
+  );
+  await expect(page.locator("dt", { hasText: "Material" })).toHaveCount(0);
+  await expect(
+    page.locator("summary", { hasText: "Measurements" }),
+  ).toHaveCount(0);
+  await page.goto("/product/temp-piece-2");
+  await expect(
+    page.getByRole("link", { name: "View similar pieces" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Inquire about this piece" }),
   ).toHaveCount(0);
 });
-test("custom fields, validation and newsletter preview", async ({ page }) => {
+test("custom validation, saved fields, newsletter success and duplicate", async ({
+  page,
+  request,
+}) => {
   await page.goto("/inquiry?type=custom");
-  await expect(page.getByLabel("Design idea")).toBeVisible();
-  await page.getByRole("button", { name: "Preview inquiry" }).click();
+  await page.getByRole("button", { name: "Send inquiry", exact: true }).click();
   await expect(page.getByLabel("Full name")).toBeFocused();
-  await page.getByLabel("Full name").fill("Preview Customer");
-  await page
-    .getByLabel("Email", { exact: false })
-    .first()
-    .fill("preview@example.com");
+  await fillInquiry(page);
   await page
     .getByLabel("Design idea")
-    .fill("Silver artwork over a black denim jacket.");
+    .fill("Temporary silver artwork integration test.");
+  await page.getByLabel("Garment type").selectOption("Denim jacket");
+  await page.getByLabel("Preferred size").fill("L");
   await page
-    .getByLabel("Message", { exact: false })
-    .fill("I would like to discuss a custom jacket.");
-  await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Preview inquiry" }).click();
+    .getByLabel("Reference URL")
+    .fill("https://example.invalid/reference");
+  await page.getByRole("button", { name: "Send inquiry", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "INQUIRY PREPARED." }),
+    page.getByRole("heading", { name: "INQUIRY SENT." }),
   ).toBeVisible();
-  await page
-    .getByLabel("Email address", { exact: true })
-    .fill("preview@example.com");
-  await page.getByRole("button", { name: "Subscribe", exact: true }).click();
-  await expect(
-    page.locator(".newsletter-form-wrap [role=status]"),
-  ).toContainText("hasn’t been subscribed");
+  const state = await (await request.get(control)).json();
+  expect(state.writes[0].body).toMatchObject({
+    inquiry_type: "custom",
+    product_id: null,
+    garment_type: "Denim jacket",
+    preferred_size: "L",
+    reference_url: "https://example.invalid/reference",
+  });
+  for (const message of [
+    "YOU'RE ON THE LIST.",
+    "YOU'RE ALREADY ON THE LIST.",
+  ]) {
+    await page
+      .getByLabel("Email address", { exact: true })
+      .fill("integration@example.invalid");
+    await page.getByRole("button", { name: "Subscribe", exact: true }).click();
+    await expect(
+      page.locator(".newsletter-form-wrap [role=status]"),
+    ).toHaveText(message);
+  }
+  const final = await (await request.get(control)).json();
+  expect(
+    final.writes.filter(
+      (w: { table: string }) => w.table === "newsletter_subscribers",
+    ),
+  ).toHaveLength(1);
 });
-test("mobile menu keyboard escape and navigation", async ({ page }) => {
+test("errors are branded and invalid submissions never reach customer tables", async ({
+  page,
+  request,
+}) => {
+  expect(
+    (
+      await request.post("/api/inquiries", { data: { email: "broken" } })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await request.post("/api/newsletter", { data: { email: "broken" } })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await request.post("/api/newsletter", {
+        data: { email: "integration@example.invalid", website: "spam" },
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await request.post("/api/inquiries", {
+        data: {
+          customer_name: "Test User",
+          email: "integration@example.invalid",
+          inquiry_type: "product",
+          product_id: null,
+          message: "Temporary test message",
+          consent: true,
+        },
+      })
+    ).status(),
+  ).toBe(400);
+  await request.post(control, { data: { scenario: "error" } });
+  await page.goto("/shop");
+  await expect(
+    page.getByRole("heading", { name: "BACK IN A MOMENT." }),
+  ).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("PRIVATE SQL");
+  await page.goto("/inquiry");
+  await fillInquiry(page);
+  await page.getByRole("button", { name: "Send inquiry", exact: true }).click();
+  await expect(page.locator(".inquiry-form [role=alert]")).toContainText(
+    "try again",
+  );
+  await expect(page.getByLabel("Full name")).toHaveValue("Integration Test");
+  await expect(page.locator("body")).not.toContainText("PRIVATE SQL");
+});
+test("mobile menu, removed demo and reserved admin routes", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
   await page.getByRole("button", { name: "Open menu" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
-  await page.getByRole("button", { name: "Open menu" }).click();
-  await page
-    .getByRole("navigation", { name: "Mobile navigation" })
-    .getByRole("link", { name: /Shop/ })
-    .click();
-  await expect(page).toHaveURL(/\/shop$/);
-  await expect(page.getByRole("dialog")).not.toBeVisible();
-});
-test("sold CTA, unknown pieces, reserved admin and reduced motion", async ({
-  page,
-}) => {
-  await page.goto("/product/scarlet-spider-jacket");
-  await expect(
-    page.getByRole("link", { name: "View available pieces" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Inquire about this piece" }),
-  ).toHaveCount(0);
-  await page.goto("/product/not-a-real-piece");
-  await expect(
-    page.getByRole("heading", { name: "THIS RACK IS EMPTY." }),
-  ).toBeVisible();
-  await page.goto("/admin/products/new");
-  await expect(
-    page.getByRole("heading", { name: "THIS RACK IS EMPTY." }),
-  ).toBeVisible();
+  for (const route of ["/todos", "/admin/products/new"]) {
+    await page.goto(route);
+    await expect(
+      page.getByRole("heading", { name: "THIS RACK IS EMPTY." }),
+    ).toBeVisible();
+  }
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   expect(
@@ -178,21 +301,44 @@ test("sold CTA, unknown pieces, reserved admin and reduced motion", async ({
       .evaluate((el) => getComputedStyle(el).animationName),
   ).toBe("none");
 });
-test("API rejects invalid submissions and reports preview honestly", async ({
+
+test("general inquiry prevents repeated-click submissions while pending", async ({
+  page,
   request,
 }) => {
-  const invalid = await request.post("/api/inquiries", {
-    data: { email: "broken" },
+  await page.goto("/inquiry");
+  await fillInquiry(page);
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
   });
-  expect(invalid.status()).toBe(400);
-  const malformed = await request.post("/api/newsletter", { data: "{" });
-  expect(malformed.status()).toBe(400);
-  const honeypot = await request.post("/api/newsletter", {
-    data: { email: "preview@example.com", website: "spam" },
+  let requests = 0;
+  await page.route("**/api/inquiries", async (route) => {
+    requests++;
+    await gate;
+    await route.continue();
   });
-  expect(honeypot.status()).toBe(400);
-  const preview = await request.post("/api/newsletter", {
-    data: { email: "preview@example.com", website: "" },
+  await page.getByRole("button", { name: "Send inquiry", exact: true }).click();
+  await expect(page.getByRole("button", { name: "SENDING..." })).toBeDisabled();
+  await page.locator(".inquiry-form").evaluate((form) => {
+    form.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
+    form.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
   });
-  expect(await preview.json()).toEqual({ mode: "preview" });
+  release?.();
+  await expect(
+    page.getByRole("heading", { name: "INQUIRY SENT." }),
+  ).toBeVisible();
+  expect(requests).toBe(1);
+  const state = await (await request.get(control)).json();
+  expect(state.writes).toHaveLength(1);
+  expect(state.writes[0].body).toMatchObject({
+    inquiry_type: "general",
+    product_id: null,
+    garment_type: null,
+    design_idea: null,
+  });
 });

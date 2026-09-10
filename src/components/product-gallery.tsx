@@ -1,21 +1,33 @@
 "use client";
-import Image from "next/image";
+import { ProductImageView } from "./product-image";
+import type { ProductImage } from "@/lib/types";
+import {
+  getGalleryImages,
+  productImageUrl,
+  PRODUCT_IMAGE_FALLBACK,
+} from "@/lib/product-utils";
 import { useState } from "react";
 export function ProductGallery({
   images,
   alt,
 }: {
-  images: string[];
+  images: ProductImage[];
   alt: string;
 }) {
   const [selected, setSelected] = useState(0);
-  const source = images.length ? images : ["/images/background.webp"];
+  const source = images.length
+    ? getGalleryImages(images).map((image) => ({
+        id: image.id,
+        src: productImageUrl(image.image_url),
+        alt: image.alt_text || alt,
+      }))
+    : [{ id: "fallback", src: PRODUCT_IMAGE_FALLBACK, alt }];
   return (
     <div className="product-gallery">
       <div className="gallery-primary">
-        <Image
-          src={source[selected]}
-          alt={`${alt} — view ${selected + 1}`}
+        <ProductImageView
+          src={source[selected].src}
+          alt={`${source[selected].alt} — view ${selected + 1}`}
           fill
           preload
           sizes="(max-width: 767px) 100vw, 60vw"
@@ -33,13 +45,13 @@ export function ProductGallery({
         >
           {source.map((image, i) => (
             <button
-              key={image}
+              key={image.id}
               aria-label={`Show view ${i + 1}`}
               aria-pressed={i === selected}
               onClick={() => setSelected(i)}
             >
-              <Image
-                src={image}
+              <ProductImageView
+                src={image.src}
                 alt={`Thumbnail of view ${i + 1}`}
                 fill
                 sizes="120px"

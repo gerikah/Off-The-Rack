@@ -1,12 +1,18 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+test.beforeEach(async ({ request }) => {
+  await request.post("http://127.0.0.1:4318/__control", {
+    data: { scenario: "populated" },
+  });
+});
 for (const width of [375, 1440]) {
   test(`catalog imagery and WCAG checks at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     for (const route of [
       "/",
       "/shop",
-      "/product/crimson-web-hoodie",
+      "/archive",
+      "/product/temp-piece-0",
       "/about",
       "/contact",
       "/inquiry?type=custom",
@@ -58,7 +64,7 @@ test("submission errors retain input and success follows a confirmed response", 
       json: { error: "Please try again shortly." },
     }),
   );
-  await page.getByRole("button", { name: "Preview inquiry" }).click();
+  await page.getByRole("button", { name: "Send inquiry" }).click();
   await expect(page.locator(".inquiry-form").getByRole("alert")).toHaveText(
     "Please try again shortly.",
   );
@@ -67,7 +73,7 @@ test("submission errors retain input and success follows a confirmed response", 
   await page.route("**/api/inquiries", (route) =>
     route.fulfill({ status: 201, json: { mode: "live" } }),
   );
-  await page.getByRole("button", { name: "Preview inquiry" }).click();
+  await page.getByRole("button", { name: "Send inquiry" }).click();
   await expect(
     page.getByRole("heading", { name: "INQUIRY SENT." }),
   ).toBeVisible();

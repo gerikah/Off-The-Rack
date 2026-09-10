@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { newsletterSchema } from "@/lib/validation";
-import { getSupabase } from "@/lib/supabase";
+import { subscribeToNewsletter } from "@/lib/data/newsletter";
 export async function POST(request: Request) {
   let input: unknown;
   try {
@@ -23,15 +23,16 @@ export async function POST(request: Request) {
       { error: "Please enter a valid email." },
       { status: 400 },
     );
-  const client = getSupabase();
-  if (!client) return NextResponse.json({ mode: "preview" });
-  const { error } = await client.rpc("subscribe_to_newsletter", {
-    subscriber_email: parsed.data.email,
-  });
-  if (error)
+  try {
+    const result = await subscribeToNewsletter(parsed.data);
     return NextResponse.json(
-      { error: "We couldn’t save your email. Please try again shortly." },
+      { mode: "live", ...result },
+      { status: result.alreadySubscribed ? 200 : 201 },
+    );
+  } catch {
+    return NextResponse.json(
+      { error: "We couldn't save your email. Please try again shortly." },
       { status: 503 },
     );
-  return NextResponse.json({ mode: "live" }, { status: 201 });
+  }
 }

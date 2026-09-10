@@ -1,26 +1,33 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { newsletterSchema } from "@/lib/validation";
 import { Arrow } from "./ui";
 import type { SubmissionResult } from "@/lib/types";
 
 export function NewsletterForm() {
-  const [state, setState] = useState<
-    "idle" | "pending" | "live" | "preview" | "error"
-  >("idle");
+  const [state, setState] = useState<"idle" | "pending" | "live" | "error">(
+    "idle",
+  );
+  const submitting = useRef(false);
   const [message, setMessage] = useState("");
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
     const form = event.currentTarget;
     const fields = new FormData(form);
+    const parsed = newsletterSchema.safeParse(Object.fromEntries(fields));
+    if (!parsed.success) {
+      setState("error");
+      setMessage(parsed.error.issues[0].message);
+      return;
+    }
+    submitting.current = true;
     setState("pending");
     try {
       const response = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: fields.get("email"),
-          website: fields.get("website"),
-        }),
+        body: JSON.stringify(parsed.data),
       });
       const result = (await response.json()) as SubmissionResult;
       if (!response.ok)
@@ -29,9 +36,9 @@ export function NewsletterForm() {
         );
       setState(result.mode);
       setMessage(
-        result.mode === "live"
-          ? "Your drop-list request has been received. Thanks for being part of the next chapter."
-          : "Preview mode: your email was validated, but hasn’t been subscribed. The drop list opens when the store is connected.",
+        result.alreadySubscribed
+          ? "YOU'RE ALREADY ON THE LIST."
+          : "YOU'RE ON THE LIST.",
       );
       if (result.mode === "live") form.reset();
     } catch (error) {
@@ -41,6 +48,8 @@ export function NewsletterForm() {
           ? error.message
           : "Something went wrong. Please try again.",
       );
+    } finally {
+      submitting.current = false;
     }
   }
   return (

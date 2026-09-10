@@ -1,7 +1,7 @@
-import Image from "next/image";
+import { ProductImageView } from "./product-image";
 import Link from "next/link";
 import type { Product, ProductStatus as Status } from "@/lib/types";
-import { formatPrice } from "@/lib/catalog";
+import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
 import { Arrow } from "./ui";
 
 export function ProductStatus({ status }: { status: Status }) {
@@ -10,7 +10,11 @@ export function ProductStatus({ status }: { status: Status }) {
       className={`product-status ${status === "available" ? "is-available" : "is-sold"}`}
     >
       <i />
-      {status === "available" ? "Available" : "Sold / archive"}
+      {status === "available"
+        ? "Available"
+        : status === "sold"
+          ? "Sold"
+          : "Archived"}
     </span>
   );
 }
@@ -23,7 +27,9 @@ export function ProductCard({
   number?: number;
   className?: string;
 }) {
-  const composite = !product.images[0]?.includes("feature-jacket");
+  const image = getPrimaryImage(product);
+  const composite =
+    image.src.startsWith("/images/") && !image.src.includes("feature-jacket");
   return (
     <article className={`product-card ${className}`}>
       <Link
@@ -32,18 +38,23 @@ export function ProductCard({
         aria-label={`View ${product.name}`}
       >
         <div className={`product-image ${composite ? "composite-image" : ""}`}>
-          <Image
-            src={product.images[0] || "/images/background.webp"}
-            alt={product.image_alt}
+          <ProductImageView
+            src={image.src}
+            alt={image.alt}
             fill
             sizes="(max-width: 600px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         </div>
         <span className="product-number">
-          OTR—{String(number ?? Number(product.id.slice(-3))).padStart(3, "0")}
+          OTR—
+          {number
+            ? String(number).padStart(3, "0")
+            : product.id.slice(0, 6).toUpperCase()}
         </span>
         {product.status !== "available" && (
-          <span className="sold-tag">SOLD</span>
+          <span className="sold-tag">
+            {product.status === "sold" ? "SOLD" : "ARCHIVED"}
+          </span>
         )}
         <span className="product-open">
           <Arrow diagonal />
@@ -58,7 +69,12 @@ export function ProductCard({
         </div>
         <div className="product-meta">
           <span>
-            {product.category} / Size {product.size}
+            {[
+              product.category?.name,
+              product.size ? `Size ${product.size}` : null,
+            ]
+              .filter(Boolean)
+              .join(" / ")}
           </span>
           <ProductStatus status={product.status} />
         </div>

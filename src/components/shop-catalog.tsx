@@ -1,17 +1,18 @@
 "use client";
 import { useState } from "react";
-import type { Product } from "@/lib/types";
-import { categories } from "@/lib/catalog";
+import type { Product, Category } from "@/lib/types";
 import { ProductGrid } from "./product-card";
 import { Arrow } from "./ui";
 
 export function ShopCatalog({
   products,
+  categories,
   initialQuery = "",
   focusSearch = false,
   initialStatus = "all",
 }: {
   products: Product[];
+  categories: Category[];
   initialQuery?: string;
   focusSearch?: boolean;
   initialStatus?: string;
@@ -33,8 +34,8 @@ export function ShopCatalog({
           : product.status !== "available");
       return (
         matchesStatus &&
-        (category === "all" || product.category === category) &&
-        `${product.name} ${product.category} ${product.color}`
+        (category === "all" || product.category_id === category) &&
+        `${product.name} ${product.category?.name || ""} ${product.color}`
           .toLowerCase()
           .includes(query.toLowerCase().trim())
       );
@@ -81,7 +82,9 @@ export function ShopCatalog({
             >
               <option value="all">All categories</option>
               {categories.map((c) => (
-                <option key={c}>{c}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </label>
@@ -115,7 +118,12 @@ export function ShopCatalog({
           <Arrow />
         </label>
       </div>
-      {filtered.length ? (
+      {!products.length ? (
+        <div className="empty-state">
+          <h2 className="display">THE RACK IS CURRENTLY EMPTY.</h2>
+          <p>Check back for the next drop.</p>
+        </div>
+      ) : filtered.length ? (
         <ProductGrid products={filtered} />
       ) : (
         <div className="empty-state">

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
-import { getProducts } from "@/lib/products";
+import { getProducts } from "@/lib/data/products";
+import { getCategories } from "@/lib/data/categories";
 import { ShopCatalog } from "@/components/shop-catalog";
 
 export const metadata: Metadata = { title: "Shop the collection" };
@@ -9,7 +10,11 @@ export default async function ShopPage({
 }: {
   searchParams: Promise<{ q?: string; search?: string; status?: string }>;
 }) {
-  const [products, params] = await Promise.all([getProducts(), searchParams]);
+  const [products, categories, params] = await Promise.all([
+    getProducts(),
+    getCategories(),
+    searchParams,
+  ]);
   return (
     <div className="shop-surface">
       <div className="section-wrap shop-page">
@@ -35,6 +40,7 @@ export default async function ShopPage({
         <ShopCatalog
           key={JSON.stringify(params)}
           products={products}
+          categories={categories}
           initialQuery={params.q}
           focusSearch={params.search === "1"}
           initialStatus={params.status}

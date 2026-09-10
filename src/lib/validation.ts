@@ -10,7 +10,7 @@ export const inquirySchema = z
       .toLowerCase()
       .max(254),
     mobile: optionalText(40),
-    type: z.enum(["product", "custom", "general"]),
+    inquiry_type: z.enum(["product", "custom", "general"]),
     product_id: z.uuid().nullable(),
     message: z
       .string()
@@ -34,7 +34,15 @@ export const inquirySchema = z
     website: optionalText(200),
   })
   .superRefine((value, ctx) => {
-    if (value.type === "custom" && value.design_idea.length < 10) {
+    if (value.inquiry_type === "product" && !value.product_id) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["product_id"],
+        message:
+          "Choose a piece from the collection, or select a general inquiry.",
+      });
+    }
+    if (value.inquiry_type === "custom" && value.design_idea.length < 10) {
       ctx.addIssue({
         code: "custom",
         path: ["design_idea"],

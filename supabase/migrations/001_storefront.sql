@@ -1,4 +1,5 @@
--- Apply once in a new Supabase project. Catalog details must be reviewed before launch.
+-- HISTORICAL LEGACY SCHEMA: incompatible with the current connected database.
+-- Do not apply or replay this migration. It is retained only as project history.
 begin;
 create table public.categories (
   id uuid primary key default gen_random_uuid(),

@@ -1,9 +1,9 @@
 "use client";
-import Image from "next/image";
+import { ProductImageView } from "./product-image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import type { InquiryType, Product, SubmissionResult } from "@/lib/types";
-import { formatPrice } from "@/lib/catalog";
+import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
 import { inquirySchema } from "@/lib/validation";
 import { Arrow, Button } from "./ui";
 import { ProductStatus } from "./product-card";
@@ -11,25 +11,25 @@ import { ProductStatus } from "./product-card";
 export function InquiryForm({
   product,
   initialType,
-  connected,
 }: {
   product?: Product;
   initialType: InquiryType;
-  connected: boolean;
 }) {
   const [type, setType] = useState<InquiryType>(initialType);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
   const successHeading = useRef<HTMLHeadingElement>(null);
   const effectiveProduct = type === "product" ? product : undefined;
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
     setError("");
     const data = new FormData(event.currentTarget);
     const values = {
       ...Object.fromEntries(data),
-      type,
+      inquiry_type: type,
       product_id: effectiveProduct?.id || null,
       consent: data.get("consent") === "on",
     };
@@ -38,6 +38,7 @@ export function InquiryForm({
       setError(parsed.error.issues[0].message);
       return;
     }
+    submitting.current = true;
     setBusy(true);
     try {
       const response = await fetch("/api/inquiries", {
@@ -61,6 +62,7 @@ export function InquiryForm({
     } catch (error) {
       setError(error instanceof Error ? error.message : "Please try again.");
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -71,30 +73,15 @@ export function InquiryForm({
           <span className="success-symbol" aria-hidden="true">
             ↗
           </span>
-          <span className="eyebrow">
-            {result.mode === "live"
-              ? "THE NEXT CHAPTER STARTS HERE"
-              : "A LOOK AT WHAT’S NEXT"}
-          </span>
+          <span className="eyebrow">THE NEXT CHAPTER STARTS HERE</span>
           <h2 ref={successHeading} tabIndex={-1} className="display">
-            {result.mode === "live" ? (
-              <>
-                INQUIRY
-                <br />
-                SENT.
-              </>
-            ) : (
-              <>
-                INQUIRY
-                <br />
-                PREPARED.
-              </>
-            )}
+            INQUIRY
+            <br />
+            SENT.
           </h2>
           <p>
-            {result.mode === "live"
-              ? "Thanks for reaching out. We’ll get back to you with the next steps."
-              : "This is a preview. Your inquiry hasn’t been sent or saved. Once the store is connected, you’ll be able to contact the team here."}
+            Thanks for reaching out. We&apos;ll get back to you with the next
+            steps.
           </p>
           <Button href="/shop">Continue shopping</Button>
           <button className="text-link" onClick={() => setResult(null)}>
@@ -109,11 +96,6 @@ export function InquiryForm({
             Tell us what you’re interested in. We’ll confirm availability,
             payment, and delivery details with you directly.
           </p>
-          {!connected && (
-            <p className="preview-notice">
-              PREVIEW — Explore the form. Submissions are not sent yet.
-            </p>
-          )}
           <form className="inquiry-form" onSubmit={submit} aria-busy={busy}>
             <div className="form-row">
               <label>
@@ -158,7 +140,9 @@ export function InquiryForm({
                   onChange={(e) => setType(e.target.value as InquiryType)}
                   required
                 >
-                  <option value="product">Product inquiry</option>
+                  <option value="product" disabled={!product}>
+                    Product inquiry
+                  </option>
                   <option value="custom">Custom piece</option>
                   <option value="general">General question</option>
                 </select>
@@ -166,9 +150,9 @@ export function InquiryForm({
             </div>
             {effectiveProduct && (
               <div className="selected-product">
-                <Image
-                  src={effectiveProduct.images[0] || "/images/background.webp"}
-                  alt={effectiveProduct.image_alt}
+                <ProductImageView
+                  src={getPrimaryImage(effectiveProduct).src}
+                  alt={getPrimaryImage(effectiveProduct).alt}
                   width={76}
                   height={84}
                 />
@@ -178,8 +162,10 @@ export function InquiryForm({
                     {effectiveProduct.name}
                   </Link>
                   <span>
-                    {formatPrice(effectiveProduct.price)} / Size{" "}
-                    {effectiveProduct.size}
+                    {formatPrice(effectiveProduct.price)}
+                    {effectiveProduct.size
+                      ? ` / Size ${effectiveProduct.size}`
+                      : ""}
                   </span>
                   <ProductStatus status={effectiveProduct.status} />
                 </div>
@@ -270,11 +256,7 @@ export function InquiryForm({
               </p>
             )}
             <button className="button" type="submit" disabled={busy}>
-              {busy
-                ? "Sending…"
-                : connected
-                  ? "Send inquiry"
-                  : "Preview inquiry"}
+              {busy ? "SENDING..." : "Send inquiry"}
               <Arrow />
             </button>
             <Link

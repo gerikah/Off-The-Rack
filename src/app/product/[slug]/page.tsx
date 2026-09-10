@@ -1,30 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct, getProducts } from "@/lib/products";
-import { formatPrice } from "@/lib/catalog";
+import { getProductBySlug, getRelatedProducts } from "@/lib/data/products";
+import { formatPrice } from "@/lib/product-utils";
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductGrid, ProductStatus } from "@/components/product-card";
 import { Button, SectionHeading } from "@/components/ui";
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = await getProduct((await params).slug);
+  const product = await getProductBySlug((await params).slug);
   return {
     title: product?.name || "Piece not found",
-    description: product?.description,
+    description:
+      product?.short_description || product?.description || undefined,
   };
 }
 export default async function ProductPage({ params }: Props) {
-  const product = await getProduct((await params).slug);
+  const product = await getProductBySlug((await params).slug);
   if (!product) notFound();
-  const related = (await getProducts())
-    .filter((p) => p.id !== product.id && p.status === "available")
-    .sort(
-      (a, b) =>
-        Number(b.category === product.category) -
-        Number(a.category === product.category),
-    )
-    .slice(0, 4);
+  const related = await getRelatedProducts(product);
   return (
     <div className="section-wrap product-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb">
@@ -33,25 +27,34 @@ export default async function ProductPage({ params }: Props) {
         <span>{product.name}</span>
       </nav>
       <div className="product-detail">
-        <ProductGallery images={product.images} alt={product.image_alt} />
+        <ProductGallery images={product.images} alt={product.name} />
         <div className="product-detail-info">
           <span className="eyebrow">
-            {product.category.toUpperCase()} / {product.drop}
+            {product.category?.name.toUpperCase()}
           </span>
           <h1 className="display">{product.name}</h1>
           <ProductStatus status={product.status} />
           <p className="detail-price">{formatPrice(product.price)}</p>
           <div className="piece-specs">
-            <div>
-              <span>Size</span>
-              <strong>{product.size}</strong>
-            </div>
-            <div>
-              <span>Color</span>
-              <strong>{product.color}</strong>
-            </div>
+            {product.size && (
+              <div>
+                <span>Size</span>
+                <strong>{product.size}</strong>
+              </div>
+            )}
+            {product.color && (
+              <div>
+                <span>Color</span>
+                <strong>{product.color}</strong>
+              </div>
+            )}
           </div>
-          <p className="product-description">{product.description}</p>
+          {product.short_description && (
+            <p className="product-description">{product.short_description}</p>
+          )}
+          {product.description && (
+            <p className="product-description">{product.description}</p>
+          )}
           {product.status === "available" ? (
             <Button href={`/inquiry?product=${product.slug}`}>
               Inquire about this piece
@@ -61,51 +64,54 @@ export default async function ProductPage({ params }: Props) {
               <p className="sold-note">
                 This one has found its person. Find the piece that’s yours.
               </p>
-              <Button href="/shop?status=available">
-                View available pieces
-              </Button>
+              <Button href="/shop?status=available">View similar pieces</Button>
             </>
           )}
           <p className="detail-note">
             One piece only. Availability confirmed on inquiry.
           </p>
           <div className="detail-accordions">
-            <details open>
-              <summary>
-                Details<span>+</span>
-              </summary>
-              <dl>
-                <dt>Condition</dt>
-                <dd>{product.condition}</dd>
-                <dt>Material</dt>
-                <dd>{product.material}</dd>
-                <dt>Finish</dt>
-                <dd>Individually hand painted</dd>
-              </dl>
-            </details>
-            <details>
-              <summary>
-                Measurements<span>+</span>
-              </summary>
-              <dl>
-                {product.measurements.map((m) => (
-                  <div key={m.label}>
-                    <dt>{m.label}</dt>
-                    <dd>{m.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p>
-                Reworked garments can fit differently from the tag. Ask us for
-                exact measurements before confirming your piece.
-              </p>
-            </details>
-            <details>
-              <summary>
-                Care<span>+</span>
-              </summary>
-              <p>{product.care}</p>
-            </details>
+            {(product.condition || product.material) && (
+              <details open>
+                <summary>
+                  Details<span>+</span>
+                </summary>
+                <dl>
+                  {product.condition && (
+                    <>
+                      <dt>Condition</dt>
+                      <dd>{product.condition}</dd>
+                    </>
+                  )}
+                  {product.material && (
+                    <>
+                      <dt>Material</dt>
+                      <dd>{product.material}</dd>
+                    </>
+                  )}
+                </dl>
+              </details>
+            )}
+            {product.measurements && (
+              <details>
+                <summary>
+                  Measurements<span>+</span>
+                </summary>
+                <p className="preserve-lines">{product.measurements}</p>
+                <p>
+                  Reworked garments can fit differently from the tag. Ask us for
+                  exact measurements before confirming your piece.
+                </p>
+              </details>
+            )}
+            {product.care_instructions && (
+              <details>
+                <summary>
+                  Care<span>+</span>
+                </summary>
+                <p className="preserve-lines">{product.care_instructions}</p>
+              </details>
+            )}
             <details>
               <summary>
                 Delivery / meetup<span>+</span>
@@ -131,11 +137,13 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
       </div>
-      <section className="related-section">
-        <SectionHeading index="↗" label="KEEP EXPLORING" />
-        <h2 className="display">YOU MAY ALSO LIKE.</h2>
-        <ProductGrid products={related} />
-      </section>
+      {related.length > 0 && (
+        <section className="related-section">
+          <SectionHeading index="↗" label="KEEP EXPLORING" />
+          <h2 className="display">YOU MAY ALSO LIKE.</h2>
+          <ProductGrid products={related} />
+        </section>
+      )}
     </div>
   );
 }

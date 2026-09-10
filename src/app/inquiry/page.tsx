@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Metadata } from "next";
-import { getProduct } from "@/lib/products";
+import { getProductBySlug } from "@/lib/data/products";
 import { InquiryForm } from "@/components/inquiry-form";
 export const metadata: Metadata = {
   title: "Send an inquiry",
@@ -12,14 +12,14 @@ export default async function InquiryPage({
   searchParams: Promise<{ product?: string; type?: string }>;
 }) {
   const params = await searchParams;
-  const product = params.product ? await getProduct(params.product) : undefined;
-  const type =
-    params.type === "custom" ? "custom" : product ? "product" : "general";
-  const connected = !!(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-  );
+  const product = params.product
+    ? await getProductBySlug(params.product)
+    : undefined;
+  const type = product
+    ? "product"
+    : params.type === "custom"
+      ? "custom"
+      : "general";
   return (
     <section className="inquiry-page inquiry-textured">
       <Image
@@ -52,9 +52,9 @@ export default async function InquiryPage({
           </span>
         </div>
         <InquiryForm
+          key={`${product?.id || "general"}:${type}`}
           product={product}
           initialType={type}
-          connected={connected}
         />
       </div>
     </section>

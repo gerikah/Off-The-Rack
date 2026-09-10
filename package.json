@@ -10,8 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
     "assets": "node scripts/prepare-assets.mjs",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"scripts/*.mjs\" \"tests/*.ts\" \"*.ts\" \"*.mjs\" DEVELOPMENT.md",
-    "catalog:export": "node scripts/export-catalog.mjs"
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"scripts/*.mjs\" \"tests/*.ts\" \"*.ts\" \"*.mjs\" DEVELOPMENT.md"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "^5.2.7",

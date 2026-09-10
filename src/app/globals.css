@@ -3804,3 +3804,50 @@ textarea:focus-visible {
     font-size: 8px;
   }
 }
+
+/* Inventory states reuse the storefront's typography and card treatment. */
+.preserve-lines {
+  white-space: pre-line;
+}
+.archive-page {
+  padding-top: 64px;
+  padding-bottom: 96px;
+}
+.archive-editorial {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 80px 40px;
+  align-items: start;
+}
+.archive-editorial .product-card:nth-child(even) {
+  margin-top: 100px;
+}
+.archive-editorial .product-image {
+  aspect-ratio: 4 / 5;
+}
+@media (max-width: 767px) {
+  .archive-editorial {
+    gap: 40px 16px;
+  }
+  .archive-editorial .product-card:nth-child(even) {
+    margin-top: 50px;
+  }
+}
+@media (max-width: 480px) {
+  .archive-editorial {
+    grid-template-columns: 1fr;
+  }
+  .archive-editorial .product-card:nth-child(even) {
+    margin-top: 0;
+  }
+}
+
+.arrival-products > .empty-state {
+  grid-column: 1 / -1;
+  flex: 0 0 100%;
+  width: 100%;
+  align-self: center;
+}
+.arrival-products > .empty-state .display {
+  font-size: clamp(36px, 4vw, 64px);
+}
