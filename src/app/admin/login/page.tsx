@@ -8,14 +8,18 @@ export default async function AdminLogin() {
   if (session.isAdmin) redirect("/admin");
   return (
     <div className="admin-login">
-      <section className="admin-login-card">
+      <div className="admin-login-brand">
         <Image
-          src="/images/star-off-the-rack-logo-favicon.webp"
-          width={64}
-          height={64}
+          src="/images/star-off-the-rack-logo-favicon.png"
+          width={124}
+          height={98}
           alt="Off The Rack"
         />
-        <p className="admin-kicker">OFF THE RACK / STUDIO ADMIN</p>
+        <span>OFF THE RACK</span>
+        <p>STUDIO WORKSPACE</p>
+      </div>
+      <section className="admin-login-card">
+        <p className="admin-kicker">ADMIN ACCESS</p>
         <h1>{session.user ? "Access not granted" : "Welcome back."}</h1>
         {session.user ? (
           <>

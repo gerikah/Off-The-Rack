@@ -612,20 +612,39 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  background: #171717;
+  padding: 48px 20px;
+  background: #efefeb;
+}
+.admin-login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.admin-login-brand img {
+  display: block;
+  width: 124px;
+  height: auto;
+  object-fit: contain;
+  background: transparent;
+  margin-bottom: 18px;
+}
+.admin-login-brand > span {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+.admin-login-brand > p {
+  margin-top: 5px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
 }
 .admin-login-card {
   width: 100%;
-  max-width: 410px;
-  background: #f5f5f1;
-  border: 1px solid #777;
+  max-width: 440px;
+  background: #fff;
+  border: 1px solid #d8d8d2;
   padding: 36px;
-}
-.admin-login-card > img {
-  background: #171717;
-  object-fit: contain;
-  margin-bottom: 24px;
 }
 .admin-kicker {
   font-size: 9px;
@@ -633,18 +652,21 @@
   margin-bottom: 12px;
 }
 .admin-login-card > p:not(.admin-kicker) {
-  margin: 12px 0 26px;
+  margin: 12px 0 28px;
 }
 .admin-login-card .admin-store-link {
   display: block;
-  margin-top: 24px;
+  border-top: 1px solid var(--admin-border);
+  padding-top: 22px;
+  margin-top: 28px;
   font-size: 11px;
+  text-align: center;
 }
 .admin-login .admin-login-footnote {
-  color: #a8a8a1;
+  color: #62625e;
   font-size: 9px;
-  letter-spacing: 0.12em;
-  margin-top: 28px;
+  letter-spacing: 0.1em;
+  margin-top: 26px;
   text-align: center;
 }
 .admin-menu-toggle {
