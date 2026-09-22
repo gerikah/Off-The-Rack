@@ -1,12 +1,14 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/seo";
 export default function robots(): MetadataRoute.Robots {
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/api/", "/inquiry"],
+      // Public AI crawlers follow the same policy as other public crawlers.
+      // These exclusions are indexing hints; Auth and RLS protect private data.
+      disallow: ["/admin", "/api/", "/inquiry", "/unsubscribe"],
     },
-    sitemap: `${origin}/sitemap.xml`,
+    sitemap: `${siteUrl}/sitemap.xml`,
   };
 }

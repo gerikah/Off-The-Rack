@@ -1,10 +1,15 @@
 import Image from "next/image";
 import type { Metadata } from "next";
+import { publicMetadata } from "@/lib/seo";
 import { getProducts } from "@/lib/data/products";
 import { getCategories } from "@/lib/data/categories";
 import { ShopCatalog } from "@/components/shop-catalog";
 
-export const metadata: Metadata = { title: "Shop the collection" };
+export const metadata: Metadata = publicMetadata(
+  "Shop the collection",
+  "Browse one-of-one hand-painted denim, reworked garments and available pieces. Search the Off The Rack collection and inquire directly.",
+  "/shop",
+);
 export default async function ShopPage({
   searchParams,
 }: {

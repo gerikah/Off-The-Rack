@@ -4,6 +4,9 @@ import { getProductBySlug } from "@/lib/data/products";
 import { InquiryForm } from "@/components/inquiry-form";
 export const metadata: Metadata = {
   title: "Send an inquiry",
+  description:
+    "Ask about an Off The Rack piece or share your custom garment idea. Availability and next steps are confirmed personally.",
+  alternates: { canonical: "/inquiry" },
   robots: { index: false, follow: true },
 };
 export default async function InquiryPage({

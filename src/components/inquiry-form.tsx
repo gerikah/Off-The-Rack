@@ -1,7 +1,7 @@
 "use client";
 import { ProductImageView } from "./product-image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { InquiryType, Product, SubmissionResult } from "@/lib/types";
 import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
 import { inquirySchema } from "@/lib/validation";
@@ -20,6 +20,10 @@ export function InquiryForm({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
+  const startedAt = useRef(0);
+  useEffect(() => {
+    startedAt.current = Date.now();
+  }, []);
   const successHeading = useRef<HTMLHeadingElement>(null);
   const effectiveProduct = type === "product" ? product : undefined;
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -32,6 +36,7 @@ export function InquiryForm({
       inquiry_type: type,
       product_id: effectiveProduct?.id || null,
       consent: data.get("consent") === "on",
+      started_at: startedAt.current,
     };
     const parsed = inquirySchema.safeParse(values);
     if (!parsed.success) {

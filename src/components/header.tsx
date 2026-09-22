@@ -27,13 +27,21 @@ export function Header() {
     if (!open) return;
     const panel = dialog.current;
     panel?.showModal();
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const closeOnDesktop = () => {
+      if (desktop.matches) setOpen(false);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
     return () => {
+      desktop.removeEventListener("change", closeOnDesktop);
       panel?.close();
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
   const close = () => {
+    dialog.current?.close();
     setOpen(false);
     toggle.current?.focus();
   };
@@ -106,10 +114,16 @@ export function Header() {
         id="mobile-menu"
         ref={dialog}
         className="mobile-menu"
-        onCancel={close}
+        aria-labelledby="mobile-menu-title"
+        onCancel={(event) => {
+          event.preventDefault();
+          close();
+        }}
       >
         <div className="mobile-menu-top">
-          <span className="eyebrow">OFF THE RACK / INDEX</span>
+          <span className="eyebrow" id="mobile-menu-title">
+            OFF THE RACK / INDEX
+          </span>
           <button
             className="icon-button"
             onClick={close}

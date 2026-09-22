@@ -10,6 +10,7 @@ const navigation = [
   ["Products", "/admin/products"],
   ["Categories", "/admin/categories"],
   ["Inquiries", "/admin/inquiries"],
+  ["Newsletter", "/admin/newsletter"],
 ];
 export function AdminShell({
   email,

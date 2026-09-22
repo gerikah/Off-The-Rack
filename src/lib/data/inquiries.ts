@@ -11,6 +11,7 @@ export async function createInquiry(input: unknown) {
       .from("products")
       .select("id")
       .eq("id", value.product_id!)
+      .eq("status", "available")
       .maybeSingle();
     if (error || !data) {
       if (error) logDataError("validate inquiry product", error);

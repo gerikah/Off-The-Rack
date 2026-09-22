@@ -62,6 +62,11 @@ export type NewsletterSubscriber = {
   id: string;
   email: string;
   is_active: boolean;
+  consent_at: string | null;
+  consent_source: string;
+  consent_verified_at: string | null;
+  consent_verified_by: string | null;
+  unsubscribed_at: string | null;
   created_at: string;
 };
 export type SubmissionResult = {

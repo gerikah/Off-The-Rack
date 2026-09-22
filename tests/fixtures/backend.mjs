@@ -1,5 +1,7 @@
 // Local-only PostgREST test double. Never imported by the application.
 import { createServer } from "node:http";
+import { newsletterFixture } from "./newsletter.mjs";
+const newsletter = newsletterFixture();
 const timestamp = "2026-09-01T00:00:00Z";
 const categories = ["Jackets", "Pants", "Tops", "Accessories", "Custom"].map(
   (name, i) => ({
@@ -40,7 +42,7 @@ const products = [
     i === 1
       ? []
       : [0, 1, 2].map((n) => ({
-          id: "image-" + i + "-" + n,
+          id: `60000000-0000-4000-8000-${String(i * 10 + n).padStart(12, "0")}`,
           product_id: "20000000-0000-4000-8000-00000000000" + i,
           image_url: [
             "/images/7.webp",
@@ -82,6 +84,8 @@ let productRows = structuredClone(products),
   categoryRows = structuredClone(categories),
   inquiryRows = structuredClone(seedInquiries);
 const sessions = new Map();
+const storageObjects = new Map(),
+  imageCleanup = new Map();
 const send = (res, status, data, headers = {}) => {
   res.writeHead(status, { "content-type": "application/json", ...headers });
   res.end(data === undefined ? undefined : JSON.stringify(data));
@@ -93,6 +97,7 @@ function userFor(email) {
         ? "40000000-0000-4000-8000-000000000000"
         : "40000000-0000-4000-8000-000000000001",
     email,
+    email_confirmed_at: timestamp,
     aud: "authenticated",
     role: "authenticated",
     app_metadata: { provider: "email", providers: ["email"] },
@@ -156,10 +161,26 @@ createServer(async (req, res) => {
     const url = new URL(req.url, "http://127.0.0.1:4318");
     let text = "";
     for await (const chunk of req) text += chunk;
-    const body = text ? JSON.parse(text) : {};
+    const body =
+      text && req.headers["content-type"]?.includes("application/json")
+        ? JSON.parse(text)
+        : {};
     if (url.pathname === "/__control") {
       if (req.method === "POST") {
-        if (body.revokeMembership) {
+        if (body.shareImage) {
+          const source = productRows
+            .flatMap((row) => row.images || [])
+            .find((image) => image.id === body.shareImage);
+          const target = productRows.find(
+            (row) => row.id === body.targetProduct,
+          );
+          if (source && target)
+            target.images.push({
+              ...source,
+              id: crypto.randomUUID(),
+              product_id: target.id,
+            });
+        } else if (body.revokeMembership) {
           membership = false;
         } else {
           scenario = body.scenario || "populated";
@@ -167,6 +188,9 @@ createServer(async (req, res) => {
           queries = [];
           membership = true;
           sessions.clear();
+          newsletter.reset();
+          storageObjects.clear();
+          imageCleanup.clear();
           productRows = scenario === "empty" ? [] : structuredClone(products);
           categoryRows = structuredClone(categories);
           inquiryRows =
@@ -180,6 +204,9 @@ createServer(async (req, res) => {
         products: productRows,
         categories: categoryRows,
         inquiries: inquiryRows,
+        newsletter: newsletter.state(),
+        storage: [...storageObjects.keys()],
+        cleanup: [...imageCleanup.values()],
       });
     }
     if (url.pathname === "/health") return send(res, 200, { ok: true });
@@ -207,6 +234,36 @@ createServer(async (req, res) => {
       sessions.delete(token);
       return send(res, 204);
     }
+    if (url.pathname.startsWith("/storage/v1/object/")) {
+      if (!admin) return send(res, 403, { message: "denied" });
+      const objectPath = url.pathname.replace(
+        "/storage/v1/object/product-images/",
+        "",
+      );
+      if (req.method === "POST") {
+        storageObjects.set(objectPath, true);
+        writes.push({
+          table: "storage",
+          method: "POST",
+          body: { path: objectPath },
+        });
+        return send(res, 200, { Key: "product-images/" + objectPath });
+      }
+      if (req.method === "DELETE") {
+        const removed = [];
+        for (const path of body.prefixes || []) {
+          const referenced = productRows.some((product) =>
+            product.images?.some((image) => image.storage_path === path),
+          );
+          if (!referenced && imageCleanup.has(path)) {
+            storageObjects.delete(path);
+            removed.push({ name: path });
+          }
+        }
+        writes.push({ table: "storage", method: "DELETE", body: { removed } });
+        return send(res, 200, removed);
+      }
+    }
     const table = url.pathname.split("/").pop();
     queries.push({
       table,
@@ -214,10 +271,96 @@ createServer(async (req, res) => {
       search: url.search,
       admin: !!admin,
     });
+    const newsletterResult = newsletter.handle(table, body, admin);
+    if (newsletterResult)
+      return send(res, newsletterResult.status, newsletterResult.data);
     if (table === "otr_is_admin")
       return user
         ? send(res, 200, !!admin)
         : send(res, 401, { code: "42501", message: "denied" });
+    if (
+      [
+        "otr_save_product_image",
+        "otr_remove_product_image",
+        "otr_claim_image_cleanup",
+        "otr_complete_image_cleanup",
+        "product_image_cleanup",
+      ].includes(table)
+    ) {
+      if (!admin) return send(res, 403, { code: "42501", message: "denied" });
+      if (table === "product_image_cleanup")
+        return send(
+          res,
+          200,
+          [...imageCleanup.values()].filter((item) => !item.completed_at),
+        );
+      if (table === "otr_claim_image_cleanup") {
+        const referenced = productRows.some((product) =>
+          product.images?.some(
+            (image) => image.storage_path === body.object_path,
+          ),
+        );
+        if (!referenced)
+          imageCleanup.set(body.object_path, {
+            storage_path: body.object_path,
+            created_at: timestamp,
+            completed_at: null,
+          });
+        return send(res, 200, !referenced);
+      }
+      if (table === "otr_complete_image_cleanup") {
+        const record = imageCleanup.get(body.object_path);
+        if (record) record.completed_at = new Date().toISOString();
+        return send(res, 204);
+      }
+      const product = productRows.find((row) => row.id === body.product_uuid);
+      if (!product) return send(res, 404, { code: "P0002" });
+      product.images ||= [];
+      if (table === "otr_remove_product_image") {
+        product.images = product.images.filter(
+          (image) => image.id !== body.image_uuid,
+        );
+        if (
+          !product.images.some((image) => image.is_primary) &&
+          product.images[0]
+        )
+          product.images[0].is_primary = true;
+      } else {
+        const existing = product.images.find(
+          (image) => image.id === body.image_uuid,
+        );
+        if (body.image_data.is_primary)
+          for (const image of product.images) image.is_primary = false;
+        if (existing)
+          Object.assign(existing, body.image_data, {
+            is_primary: body.image_data.is_primary || existing.is_primary,
+          });
+        else
+          product.images.push({
+            id: crypto.randomUUID(),
+            product_id: product.id,
+            created_at: timestamp,
+            sort_order: product.images.length,
+            ...body.image_data,
+            is_primary: !product.images.length,
+          });
+      }
+      writes.push({
+        table: "product_images",
+        method: table === "otr_remove_product_image" ? "DELETE" : "POST",
+        body,
+      });
+      return send(res, 204);
+    }
+    if (table === "product_images" && req.method === "GET") {
+      let rows = filterRows(
+        productRows.flatMap((row) => row.images || []),
+        url,
+      );
+      if (req.headers.accept?.includes("vnd.pgrst.object+json"))
+        return send(res, 200, rows[0] || null);
+      return send(res, 200, rows);
+    }
     if (table === "otr_delete_product") {
       if (!admin) return send(res, 403, { code: "42501", message: "denied" });
       if (inquiryRows.some((row) => row.product_id === body.product_uuid))

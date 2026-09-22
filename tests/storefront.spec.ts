@@ -119,15 +119,18 @@ test("shop filters and sorting stay within the current page", async ({
   await expect(page).toHaveURL(/\/shop$/);
 });
 async function fillInquiry(page: Page) {
-  await page.getByLabel("Full name").fill("Integration Test");
-  await page
+  const form = page.locator(".inquiry-form");
+  await form.getByLabel("Full name").fill("Integration Test");
+  await form
     .locator("input[name=email]")
     .first()
     .fill("integration@example.invalid");
-  await page
+  await form
     .getByLabel("Message", { exact: false })
     .fill("Temporary integration test inquiry.");
-  await page.getByRole("checkbox").check();
+  await form.getByRole("checkbox").check();
+  // Exercise the real server timing protection at a human submission pace.
+  await page.waitForTimeout(1_300);
 }
 test("gallery order, optional metadata, related pieces and product association", async ({
   page,
@@ -208,17 +211,19 @@ test("custom validation, saved fields, newsletter success and duplicate", async 
     preferred_size: "L",
     reference_url: "https://example.invalid/reference",
   });
-  for (const message of [
-    "YOU'RE ON THE LIST.",
-    "YOU'RE ALREADY ON THE LIST.",
-  ]) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     await page
       .getByLabel("Email address", { exact: true })
       .fill("integration@example.invalid");
+    await page.locator(".newsletter-form").getByRole("checkbox").check();
+    await page.waitForTimeout(1_300);
     await page.getByRole("button", { name: "Subscribe", exact: true }).click();
     await expect(
       page.locator(".newsletter-form-wrap [role=status]"),
-    ).toHaveText(message);
+    ).toContainText("IF ELIGIBLE, YOUR EMAIL IS ON THE DROP LIST.");
+    await expect(page.getByLabel("Email address", { exact: true })).toHaveValue(
+      "",
+    );
   }
   const final = await (await request.get(control)).json();
   expect(

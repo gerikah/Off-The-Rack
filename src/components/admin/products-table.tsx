@@ -1,12 +1,18 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import type { AdminProduct, AdminCategory } from "@/lib/admin/data";
-import { formatPrice } from "@/lib/product-utils";
+import {
+  formatPrice,
+  getGalleryImages,
+  productImageUrl,
+} from "@/lib/product-utils";
 import { productTransitions } from "@/lib/admin/validation";
 import { productAction } from "@/app/admin/actions";
 import { AdminEmpty, ImagePlaceholder, StatusBadge, adminDate } from "./ui";
 import { ConfirmAction } from "./confirm-action";
+import { ProductImageView } from "@/components/product-image";
+import { imageCleanupAction } from "@/app/admin/image-actions";
 export function ProductsTable({
   products,
   categories,
@@ -14,6 +20,10 @@ export function ProductsTable({
   products: AdminProduct[];
   categories: AdminCategory[];
 }) {
+  const [cleanup, cleanupAction, cleanupPending] = useActionState(
+    imageCleanupAction,
+    {},
+  );
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
@@ -25,17 +35,22 @@ export function ProductsTable({
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
   );
-  if (!products.length)
-    return (
-      <AdminEmpty
-        title="NO PRODUCTS YET."
-        description="Add your first piece to the rack."
-        href="/admin/products/new"
-        label="ADD PRODUCT"
-      />
-    );
+
   return (
     <>
+      <form
+        action={cleanupAction}
+        className="admin-image-cleanup"
+        aria-busy={cleanupPending}
+      >
+        <button className="admin-text-button" disabled={cleanupPending}>
+          {cleanupPending
+            ? "Checking unused images..."
+            : "Retry unused image cleanup"}
+        </button>
+        {cleanup.message && <p role="status">{cleanup.message}</p>}
+        {cleanup.error && <p role="alert">{cleanup.error}</p>}
+      </form>
       <div className="admin-filters">
         <label>
           Search products
@@ -77,8 +92,14 @@ export function ProductsTable({
       </p>
       {!filtered.length ? (
         <AdminEmpty
-          title="NO MATCHING RESULTS."
-          description="Try another search or change your filters."
+          title={products.length ? "NO MATCHING RESULTS." : "NO PRODUCTS YET."}
+          description={
+            products.length
+              ? "Try another search or change your filters."
+              : "Add your first piece to the rack."
+          }
+          href={products.length ? undefined : "/admin/products/new"}
+          label={products.length ? undefined : "ADD PRODUCT"}
         />
       ) : (
         <div className="admin-table-wrap">
@@ -104,7 +125,23 @@ export function ProductsTable({
               {filtered.map((product) => (
                 <tr key={product.id}>
                   <td data-label="Image">
-                    <ImagePlaceholder />
+                    {product.images?.length ? (
+                      <ProductImageView
+                        className="admin-product-thumbnail"
+                        src={productImageUrl(
+                          getGalleryImages(product.images)[0].image_url,
+                        )}
+                        alt={
+                          getGalleryImages(product.images)[0].alt_text ||
+                          product.name
+                        }
+                        width={48}
+                        height={54}
+                        sizes="48px"
+                      />
+                    ) : (
+                      <ImagePlaceholder />
+                    )}
                   </td>
                   <td data-label="Product">
                     <Link
@@ -133,6 +170,31 @@ export function ProductsTable({
                           More <span aria-hidden="true">&#8943;</span>
                         </summary>
                         <div>
+                          <ConfirmAction
+                            label={
+                              product.featured
+                                ? "Remove featured"
+                                : "Feature product"
+                            }
+                            title={
+                              product.featured
+                                ? "REMOVE FEATURED STATUS?"
+                                : "FEATURE PRODUCT?"
+                            }
+                            description={
+                              product.name +
+                              (product.featured
+                                ? " will no longer be featured."
+                                : " will be marked as featured.")
+                            }
+                            action={productAction}
+                            fields={{
+                              id: product.id,
+                              operation: product.featured
+                                ? "unfeature"
+                                : "feature",
+                            }}
+                          />
                           {productTransitions[product.status].map((next) => (
                             <ConfirmAction
                               key={next}

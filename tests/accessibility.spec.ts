@@ -57,7 +57,7 @@ test("submission errors retain input and success follows a confirmed response", 
   await page
     .getByLabel("Message", { exact: false })
     .fill("Can you help me choose a hand-painted piece?");
-  await page.getByRole("checkbox").check();
+  await page.locator(".inquiry-form").getByRole("checkbox").check();
   await page.route("**/api/inquiries", (route) =>
     route.fulfill({
       status: 503,

@@ -1,3 +1,5 @@
+> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](docs/PROJECT_DOCUMENTATION.md). The original admin allowlist setup below remains applicable when002 is not already installed.
+
 # Admin implementation report
 
 The existing Off The Rack project now includes an internal admin CMS. The public storefront design and navigation are preserved. Live admin access requires the SQL and account setup below.

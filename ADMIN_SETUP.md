@@ -1,3 +1,5 @@
+> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](docs/PROJECT_DOCUMENTATION.md). The original admin allowlist setup below remains applicable when002 is not already installed.
+
 # Off The Rack admin setup
 
 The admin app uses the existing Supabase public URL/key and email/password Auth. No new environment variables or privileged server keys are needed. This implementation does not apply SQL or create accounts automatically.

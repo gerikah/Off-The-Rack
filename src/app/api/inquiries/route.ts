@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
 import { inquirySchema } from "@/lib/validation";
 import { createInquiry } from "@/lib/data/inquiries";
+import {
+  limitPublicRequest,
+  PublicRequestError,
+  readPublicJson,
+  validateFormTiming,
+} from "@/lib/security/public-request";
 
 export async function POST(request: Request) {
-  if (Number(request.headers.get("content-length") || 0) > 16000)
-    return NextResponse.json(
-      { error: "Please shorten your inquiry." },
-      { status: 413 },
-    );
   let input: unknown;
   try {
-    const text = await request.text();
-    if (text.length > 16000)
-      return NextResponse.json(
-        { error: "Please shorten your inquiry." },
-        { status: 413 },
-      );
-    input = JSON.parse(text);
-  } catch {
+    limitPublicRequest(request, "inquiry");
+    input = await readPublicJson(request, 16000);
+  } catch (error) {
     return NextResponse.json(
-      { error: "Please submit a valid inquiry." },
-      { status: 400 },
+      {
+        error:
+          error instanceof PublicRequestError
+            ? error.message
+            : "Please submit a valid inquiry.",
+      },
+      { status: error instanceof PublicRequestError ? error.status : 400 },
     );
   }
   const parsed = inquirySchema.safeParse(input);
@@ -35,12 +36,18 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   try {
+    validateFormTiming(parsed.data.started_at);
     await createInquiry(parsed.data);
     return NextResponse.json({ mode: "live" }, { status: 201 });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { error: "We couldn't send your inquiry. Please try again shortly." },
-      { status: 503 },
+      {
+        error:
+          error instanceof PublicRequestError
+            ? error.message
+            : "We couldn't send your inquiry. Please try again shortly.",
+      },
+      { status: error instanceof PublicRequestError ? error.status : 503 },
     );
   }
 }

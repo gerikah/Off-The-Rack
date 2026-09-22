@@ -1,3 +1,5 @@
+> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](docs/PROJECT_DOCUMENTATION.md). The original admin allowlist setup below remains applicable when002 is not already installed.
+
 # Supabase integration report
 
 This report records the storefront integration checkpoint. Admin functionality was added afterward; see [ADMIN_SETUP.md](ADMIN_SETUP.md) for current admin setup and authorization.

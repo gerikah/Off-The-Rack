@@ -8,10 +8,11 @@ export async function subscribeToNewsletter(input: unknown) {
   const { error } = await getSupabase()
     .from("newsletter_subscribers")
     .insert({ email: value.email, is_active: true });
-  if (error?.code === "23505") return { alreadySubscribed: true };
+  // Neutral response: anonymous requests cannot discover or reactivate opt-outs.
+  if (error?.code === "23505") return { accepted: true };
   if (error) {
     logDataError("subscribe to newsletter", error);
     throw new Error("We couldn't save your email. Please try again shortly.");
   }
-  return { alreadySubscribed: false };
+  return { accepted: true };
 }

@@ -1,19 +1,28 @@
 import type { Metadata } from "next";
+import { publicMetadata, siteUrl } from "@/lib/seo";
+import { StructuredData } from "@/components/structured-data";
+import { ProductActions } from "@/components/product-actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug, getRelatedProducts } from "@/lib/data/products";
-import { formatPrice } from "@/lib/product-utils";
+import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductGrid, ProductStatus } from "@/components/product-card";
 import { Button, SectionHeading } from "@/components/ui";
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProductBySlug((await params).slug);
-  return {
-    title: product?.name || "Piece not found",
-    description:
-      product?.short_description || product?.description || undefined,
-  };
+  if (!product) return { title: "Piece not found", robots: { index: false } };
+  return publicMetadata(
+    product.name,
+    (
+      product.short_description ||
+      product.description ||
+      `Explore ${product.name}, a one-of-one Off The Rack piece. Availability is confirmed by inquiry.`
+    ).slice(0, 200),
+    `/product/${product.slug}`,
+    getPrimaryImage(product).src,
+  );
 }
 export default async function ProductPage({ params }: Props) {
   const product = await getProductBySlug((await params).slug);
@@ -21,6 +30,60 @@ export default async function ProductPage({ params }: Props) {
   const related = await getRelatedProducts(product);
   return (
     <div className="section-wrap product-page">
+      <StructuredData
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Product",
+              name: product.name,
+              description:
+                product.short_description || product.description || undefined,
+              image: [new URL(getPrimaryImage(product).src, siteUrl).href],
+              sku: product.id,
+              url: `${siteUrl}/product/${product.slug}`,
+              brand: { "@type": "Brand", name: "Off The Rack" },
+              ...(product.status !== "archived"
+                ? {
+                    offers: {
+                      "@type": "Offer",
+                      url: `${siteUrl}/product/${product.slug}`,
+                      priceCurrency: "PHP",
+                      price: product.price,
+                      availability:
+                        product.status === "available"
+                          ? "https://schema.org/InStock"
+                          : "https://schema.org/SoldOut",
+                    },
+                  }
+                : {}),
+            },
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Home",
+                  item: siteUrl,
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: "Collection",
+                  item: `${siteUrl}/shop`,
+                },
+                {
+                  "@type": "ListItem",
+                  position: 3,
+                  name: product.name,
+                  item: `${siteUrl}/product/${product.slug}`,
+                },
+              ],
+            },
+          ],
+        }}
+      />
       <nav className="breadcrumbs" aria-label="Breadcrumb">
         <Link href="/shop">Collection</Link>
         <span>/</span>
@@ -70,6 +133,11 @@ export default async function ProductPage({ params }: Props) {
           <p className="detail-note">
             One piece only. Availability confirmed on inquiry.
           </p>
+          <ProductActions
+            id={product.id}
+            name={product.name}
+            slug={product.slug}
+          />
           <div className="detail-accordions">
             {(product.condition || product.material) && (
               <details open>

@@ -1,0 +1,16 @@
+# Off The Rack
+
+> An independent clothing label from the Philippines, making one-of-one hand-painted and reworked garments.
+
+## Public pages
+- [Home](https://offtherack.vercel.app/): Brand and selected pieces.
+- [Collection](https://offtherack.vercel.app/shop): Current catalog, prices in Philippine pesos and availability.
+- [Archive](https://offtherack.vercel.app/archive): Sold and archived work for reference.
+- [Our story](https://offtherack.vercel.app/about): Brand story and process.
+- [Contact](https://offtherack.vercel.app/contact): Public contact details.
+- [Sitemap](https://offtherack.vercel.app/sitemap.xml): Canonical public product links.
+
+## Context
+Customers submit inquiries. There is no online checkout, payment processing or automatic reservation. Availability, delivery and payment details are confirmed manually. Archived or sold pieces are not available for purchase. Product facts may change; consult the current product page. Admin, inquiry records and subscriber records are private.
+
+This optional guide is descriptive; robots.txt controls crawler preferences. It does not grant access to private information.

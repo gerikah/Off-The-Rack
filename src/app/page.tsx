@@ -1,9 +1,17 @@
+import { publicMetadata, siteUrl, siteDescription } from "@/lib/seo";
+import { StructuredData } from "@/components/structured-data";
+import { brand } from "@/lib/brand";
 import Image from "next/image";
 import Link from "next/link";
 import { getNewArrivals, getBestsellers } from "@/lib/data/products";
 import { Arrow, Button, Marquee, SectionHeading } from "@/components/ui";
 import { ProductCard } from "@/components/product-card";
 
+export const metadata = publicMetadata(
+  "Wearable art. No repeats.",
+  siteDescription,
+  "/",
+);
 export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [arrivals, featuredWorks] = await Promise.all([
@@ -12,6 +20,29 @@ export default async function HomePage() {
   ]);
   return (
     <>
+      <StructuredData
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": `${siteUrl}/#organization`,
+              name: "Off The Rack",
+              url: siteUrl,
+              logo: `${siteUrl}/app-icon-512.png`,
+              sameAs: brand.socials.map((social) => social.url),
+            },
+            {
+              "@type": "WebSite",
+              "@id": `${siteUrl}/#website`,
+              name: "Off The Rack",
+              url: siteUrl,
+              inLanguage: "en-PH",
+              publisher: { "@id": `${siteUrl}/#organization` },
+            },
+          ],
+        }}
+      />
       <section className="hero hero-textured">
         <div className="hero-topline">
           <span>INDEPENDENT CLOTHING LABEL</span>

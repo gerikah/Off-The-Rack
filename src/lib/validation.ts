@@ -32,6 +32,7 @@ export const inquirySchema = z
       .default(""),
     consent: z.literal(true, { error: "Please agree to be contacted." }),
     website: optionalText(200),
+    started_at: z.number().finite(),
   })
   .superRefine((value, ctx) => {
     if (value.inquiry_type === "product" && !value.product_id) {
@@ -52,5 +53,9 @@ export const inquirySchema = z
   });
 export const newsletterSchema = z.object({
   email: z.email("Enter a valid email address.").trim().toLowerCase().max(254),
+  consent: z.literal(true, {
+    error: "Please agree to receive drop-list emails.",
+  }),
+  started_at: z.number().finite().positive(),
   website: optionalText(200),
 });

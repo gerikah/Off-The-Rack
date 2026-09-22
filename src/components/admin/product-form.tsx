@@ -1,15 +1,15 @@
 "use client";
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import type { Category, ProductRow } from "@/lib/types";
+import type { Category, ProductRow, ProductImage } from "@/lib/types";
 import { saveProductAction } from "@/app/admin/actions";
 import { slugify } from "@/lib/admin/validation";
-import { ImagePlaceholder } from "./ui";
+import { ProductImagesEditor } from "./product-images-editor";
 export function ProductForm({
   product,
   categories,
 }: {
-  product?: ProductRow;
+  product?: ProductRow & { images: ProductImage[] };
   categories: Category[];
 }) {
   const [state, action, pending] = useActionState(saveProductAction, {});
@@ -30,6 +30,7 @@ export function ProductForm({
     featured: product?.featured || false,
     bestseller: product?.bestseller || false,
   });
+  const [imageBusy, setImageBusy] = useState(false);
   const [manualSlug, setManualSlug] = useState(!!product);
   type TextField = Exclude<keyof typeof values, "featured" | "bestseller">;
   function change(name: TextField, value: string) {
@@ -199,14 +200,18 @@ export function ProductForm({
             </section>
             <section className="admin-panel">
               <h2>Product images</h2>
-              <p className="admin-help">Image upload will be added later.</p>
-              <div className="admin-image-grid">
-                {["Primary", "Additional", "Additional", "Additional"].map(
-                  (label, index) => (
-                    <ImagePlaceholder key={index} large label={label} />
-                  ),
-                )}
-              </div>
+              {product ? (
+                <ProductImagesEditor
+                  productId={product.id}
+                  initialImages={product.images}
+                  onBusy={setImageBusy}
+                />
+              ) : (
+                <p className="admin-help">
+                  Save your product details first. You will then be taken to the
+                  image editor to upload, preview and describe your photos.
+                </p>
+              )}
             </section>
           </div>
         </div>
@@ -219,7 +224,7 @@ export function ProductForm({
           </Link>
           <button
             className="admin-button"
-            disabled={pending || !categories.length}
+            disabled={pending || imageBusy || !categories.length}
           >
             {pending ? "SAVING..." : product ? "SAVE CHANGES" : "SAVE PRODUCT"}
           </button>

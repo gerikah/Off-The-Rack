@@ -8,3 +8,33 @@ out/
 test-results/
 playwright-report/
 .vercel/
+
+# Local credentials, private keys, and authenticated browser state
+.npmrc
+.netrc
+.aws/
+.ssh/
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+credentials*.json
+service-account*.json
+playwright/.auth/
+
+# Local tooling, logs, and database backups (keep migrations tracked)
+.codex/
+.agents/
+.vscode/
+.idea/
+*.log
+coverage/
+backups/
+*.dump
+*.backup
+*.sqlite
+*.sqlite3
+supabase/.temp/
+supabase/.branches/

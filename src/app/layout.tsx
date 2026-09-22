@@ -10,26 +10,27 @@ import { SiteChrome } from "@/components/site-chrome";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { NewsletterForm } from "@/components/newsletter-form";
+import { siteUrl, siteDescription } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  ),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "OFF THE RACK — Wearable art. No repeats.",
     template: "%s — OFF THE RACK",
   },
-  description:
-    "One-of-one denim and hand-painted pieces made to stand apart. Discover Off The Rack, an independent fashion label from the Philippines.",
-  icons: { icon: "/icon.png" },
+  description: siteDescription,
+  applicationName: "Off The Rack",
+  icons: { icon: "/icon.png", apple: "/apple-touch-icon.png" },
+  manifest: "/manifest.webmanifest",
+  twitter: { card: "summary_large_image", images: ["/social-sharing.jpg"] },
   openGraph: {
     type: "website",
     siteName: "OFF THE RACK",
     images: [
       {
-        url: "/images/feature-jacket-2.webp",
+        url: "/social-sharing.jpg",
         width: 1200,
-        height: 1200,
+        height: 630,
         alt: "Off The Rack hand-painted denim",
       },
     ],

@@ -1,0 +1,50 @@
+{
+  "scope": "All emitted production browser chunks; not a single route download or Web Vitals score",
+  "totalBytes": 1082830,
+  "totalGzip": 311153,
+  "chunkCount": 27,
+  "largest": [
+    {
+      "path": ".next/static/chunks/2bqea1wb93ezc.js",
+      "bytes": 374751,
+      "gzip": 85500
+    },
+    {
+      "path": ".next/static/chunks/1j_9b-l0n6u-t.js",
+      "bytes": 228922,
+      "gzip": 71576
+    },
+    {
+      "path": ".next/static/chunks/2-rtuqsgzmno4.js",
+      "bytes": 165743,
+      "gzip": 45095
+    },
+    {
+      "path": ".next/static/chunks/0cz1d0mv5g_q7.js",
+      "bytes": 112594,
+      "gzip": 39627
+    },
+    {
+      "path": ".next/static/chunks/19mx3mg6lkumu.js",
+      "bytes": 28907,
+      "gzip": 7614
+    },
+    {
+      "path": ".next/static/chunks/0x5jm_clcp95s.js",
+      "bytes": 24801,
+      "gzip": 8932
+    },
+    {
+      "path": ".next/static/chunks/3kpoedz4svrsd.js",
+      "bytes": 21924,
+      "gzip": 6544
+    },
+    {
+      "path": ".next/static/chunks/1gc822u8oxqsy.js",
+      "bytes": 14602,
+      "gzip": 5267
+    }
+  ],
+  "publicSourceMaps": [],
+  "cssBytes": 84255
+}

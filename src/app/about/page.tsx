@@ -1,8 +1,13 @@
 import Image from "next/image";
 import type { Metadata } from "next";
+import { publicMetadata } from "@/lib/seo";
 import { Arrow, Button } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Our story" };
+export const metadata: Metadata = publicMetadata(
+  "Our story",
+  "Meet Off The Rack, an independent Philippine label giving existing garments a new story through hand-painted art and thoughtful reworking.",
+  "/about",
+);
 export default function AboutPage() {
   return (
     <div className="about-page about-textured">

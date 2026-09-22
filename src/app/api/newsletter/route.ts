@@ -1,38 +1,40 @@
 import { NextResponse } from "next/server";
 import { newsletterSchema } from "@/lib/validation";
 import { subscribeToNewsletter } from "@/lib/data/newsletter";
+import {
+  limitPublicRequest,
+  PublicRequestError,
+  readPublicJson,
+  validateFormTiming,
+} from "@/lib/security/public-request";
 export async function POST(request: Request) {
-  let input: unknown;
   try {
-    const text = await request.text();
-    if (text.length > 2000)
-      return NextResponse.json(
-        { error: "Invalid subscription request." },
-        { status: 413 },
+    limitPublicRequest(request, "newsletter");
+    const parsed = newsletterSchema.safeParse(
+      await readPublicJson(request, 2000),
+    );
+    if (!parsed.success || parsed.data.website)
+      throw new PublicRequestError(
+        "Please enter a valid email and agree to receive updates.",
       );
-    input = JSON.parse(text);
-  } catch {
+    validateFormTiming(parsed.data.started_at);
+    await subscribeToNewsletter(parsed.data);
     return NextResponse.json(
-      { error: "Please enter a valid email." },
-      { status: 400 },
+      { mode: "live" },
+      { status: 200, headers: { "Cache-Control": "no-store" } },
     );
-  }
-  const parsed = newsletterSchema.safeParse(input);
-  if (!parsed.success || parsed.data.website)
+  } catch (error) {
     return NextResponse.json(
-      { error: "Please enter a valid email." },
-      { status: 400 },
-    );
-  try {
-    const result = await subscribeToNewsletter(parsed.data);
-    return NextResponse.json(
-      { mode: "live", ...result },
-      { status: result.alreadySubscribed ? 200 : 201 },
-    );
-  } catch {
-    return NextResponse.json(
-      { error: "We couldn't save your email. Please try again shortly." },
-      { status: 503 },
+      {
+        error:
+          error instanceof PublicRequestError
+            ? error.message
+            : "We couldn't save your email. Please try again shortly.",
+      },
+      {
+        status: error instanceof PublicRequestError ? error.status : 503,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
   }
 }

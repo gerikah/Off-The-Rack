@@ -6,7 +6,7 @@ import { logDataError } from "./errors";
 export const getCategories = cache(async (): Promise<Category[]> => {
   const { data, error } = await getSupabase()
     .from("categories")
-    .select("*")
+    .select("id,name,slug,description,created_at,updated_at")
     .order("name");
   if (error) {
     logDataError("read categories", error);

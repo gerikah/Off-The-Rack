@@ -3,7 +3,8 @@ import { cache } from "react";
 import { getSupabase } from "../supabase";
 import type { Product, ProductStatus } from "../types";
 import { logDataError } from "./errors";
-const selection = "*, category:categories(*), images:product_images(*)";
+const selection =
+  "id,name,slug,short_description,description,price,category_id,size,condition,material,color,measurements,care_instructions,status,featured,bestseller,created_at,updated_at,category:categories(id,name,slug,description,created_at,updated_at),images:product_images(id,product_id,image_url,storage_path,alt_text,sort_order,is_primary,created_at)";
 type Filters = {
   statuses?: ProductStatus[];
   bestseller?: boolean;
@@ -62,8 +63,12 @@ export const getBestsellers = cache((limit = 5) =>
 export const getArchivedProducts = cache(() =>
   queryProducts({ statuses: ["sold", "archived"] }),
 );
-export const getProductBySlug = cache(
-  async (slug: string) => (await queryProducts({ slug, limit: 1 }))[0],
+export const getProductBySlug = cache(async (slug: string) =>
+  typeof slug === "string" &&
+  /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) &&
+  slug.length <= 160
+    ? (await queryProducts({ slug, limit: 1 }))[0]
+    : undefined,
 );
 export const getRelatedProducts = cache(async (product: Product, limit = 4) => {
   const sameCategory = product.category_id

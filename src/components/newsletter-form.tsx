@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { newsletterSchema } from "@/lib/validation";
 import { Arrow } from "./ui";
 import type { SubmissionResult } from "@/lib/types";
@@ -9,13 +9,21 @@ export function NewsletterForm() {
     "idle",
   );
   const submitting = useRef(false);
+  const startedAt = useRef(0);
+  useEffect(() => {
+    startedAt.current = Date.now();
+  }, []);
   const [message, setMessage] = useState("");
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
     const form = event.currentTarget;
     const fields = new FormData(form);
-    const parsed = newsletterSchema.safeParse(Object.fromEntries(fields));
+    const parsed = newsletterSchema.safeParse({
+      ...Object.fromEntries(fields),
+      consent: fields.get("consent") === "on",
+      started_at: startedAt.current,
+    });
     if (!parsed.success) {
       setState("error");
       setMessage(parsed.error.issues[0].message);
@@ -36,11 +44,12 @@ export function NewsletterForm() {
         );
       setState(result.mode);
       setMessage(
-        result.alreadySubscribed
-          ? "YOU'RE ALREADY ON THE LIST."
-          : "YOU'RE ON THE LIST.",
+        "THANK YOU. IF ELIGIBLE, YOUR EMAIL IS ON THE DROP LIST. You can unsubscribe from any newsletter.",
       );
-      if (result.mode === "live") form.reset();
+      if (result.mode === "live") {
+        form.reset();
+        startedAt.current = Date.now();
+      }
     } catch (error) {
       setState("error");
       setMessage(
@@ -90,6 +99,18 @@ export function NewsletterForm() {
             {state === "pending" ? "Joining…" : "Subscribe"}
             <Arrow />
           </button>
+          <label className="newsletter-consent">
+            <input
+              name="consent"
+              type="checkbox"
+              required
+              disabled={state === "pending"}
+            />
+            <span>
+              I agree to receive Off The Rack drops and custom-slot emails.
+              Unsubscribe anytime.
+            </span>
+          </label>
         </form>
         <p
           className={`form-feedback ${state === "error" ? "is-error" : ""}`}

@@ -1,5 +1,6 @@
-import "server-only";
+﻿import "server-only";
 import { requireAdmin } from "./auth";
+import { cleanupProductImageFiles } from "./images";
 import { AdminError, databaseError } from "./errors";
 import {
   productSchema,
@@ -9,13 +10,16 @@ import {
   inquiryStatusSchema,
   productTransitions,
 } from "./validation";
-import type { ProductRow, Category, Inquiry } from "@/lib/types";
-export type AdminProduct = ProductRow & { category: Category | null };
+import type { ProductRow, ProductImage, Category, Inquiry } from "@/lib/types";
+export type AdminProduct = ProductRow & {
+  category: Category | null;
+  images: ProductImage[];
+};
 export type AdminCategory = Category & { productCount: number };
 export type AdminInquiry = Inquiry & {
   product: Pick<ProductRow, "id" | "name" | "slug" | "status"> | null;
 };
-const productSelect = "*, category:categories(*)";
+const productSelect = "*, category:categories(*), images:product_images(*)";
 const inquirySelect = "*, product:products(id,name,slug,status)";
 export async function getAdminProducts(): Promise<AdminProduct[]> {
   const { client } = await requireAdmin();
@@ -124,6 +128,7 @@ export async function updateProductStatus(id: string, status: unknown) {
 export async function deleteProduct(id: string) {
   const { client } = await requireAdmin();
   idSchema.parse(id);
+  const current = await getAdminProductById(id);
   const { error } = await client.rpc("otr_delete_product", {
     product_uuid: id,
   });
@@ -132,6 +137,10 @@ export async function deleteProduct(id: string) {
       "This product has related inquiries or records. Archive it to preserve its history.",
     );
   if (error) databaseError("delete product", error);
+  return cleanupProductImageFiles(
+    client,
+    current?.images.map((image) => image.storage_path) || [],
+  );
 }
 async function saveCategory(input: unknown, id?: string) {
   const { client } = await requireAdmin();
@@ -245,4 +254,17 @@ export async function getDashboardStats() {
     openInquiries: results[3].count || 0,
     recent: results[4].data || [],
   };
+}
+
+export async function updateProductFeatured(id: string, featured: boolean) {
+  const { client } = await requireAdmin();
+  idSchema.parse(id);
+  const { data, error } = await client
+    .from("products")
+    .update({ featured, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error) databaseError("change featured product", error);
+  if (!data) throw new AdminError("This product no longer exists.");
 }

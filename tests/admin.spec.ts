@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+﻿import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {
   slugify,
@@ -158,10 +158,13 @@ test("product form validates, auto-generates slug, creates and edits without ima
     .fill("temporary-admin-jacket");
   await page.getByLabel("Bestseller", { exact: true }).check();
   await page.getByRole("button", { name: "SAVE PRODUCT" }).click();
-  await expect(page).toHaveURL(/\/admin\/products\?notice=added/);
+  await expect(page).toHaveURL(
+    /\/admin\/products\/[0-9a-f-]+\/edit\?notice=added/,
+  );
   await expect(
     page.getByRole("status").filter({ hasText: "PRODUCT ADDED." }),
   ).toBeVisible();
+  await page.goto("/admin/products");
   const row = page
     .getByRole("row")
     .filter({ hasText: "Temporary Admin Jacket" });

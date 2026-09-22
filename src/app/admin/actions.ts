@@ -5,6 +5,7 @@ import {
   createProduct,
   updateProduct,
   updateProductStatus,
+  updateProductFeatured,
   deleteProduct,
   createCategory,
   updateCategory,
@@ -26,6 +27,7 @@ export async function saveProductAction(
 ): Promise<ActionState> {
   await requireAdmin();
   const id = String(form.get("id") || "");
+  let savedId = id;
   try {
     const payload = {
       ...Object.fromEntries(form),
@@ -33,12 +35,16 @@ export async function saveProductAction(
       bestseller: form.get("bestseller") === "on",
     };
     if (id) await updateProduct(id, payload);
-    else await createProduct(payload);
+    else savedId = await createProduct(payload);
   } catch (error) {
     return actionError(error);
   }
   refreshInventory();
-  redirect("/admin/products?notice=" + (id ? "updated" : "added"));
+  redirect(
+    id
+      ? "/admin/products?notice=updated"
+      : "/admin/products/" + savedId + "/edit?notice=added",
+  );
 }
 export async function productAction(
   _state: ActionState,
@@ -46,11 +52,14 @@ export async function productAction(
 ): Promise<ActionState> {
   await requireAdmin();
   const action = String(form.get("operation"));
+  let pendingCleanup = false;
   try {
     if (form.get("confirm") !== "yes")
       throw new AdminError("Confirm this action first.");
     const id = String(form.get("id"));
-    if (action === "delete") await deleteProduct(id);
+    if (action === "delete") pendingCleanup = await deleteProduct(id);
+    else if (action === "feature" || action === "unfeature")
+      await updateProductFeatured(id, action === "feature");
     else await updateProductStatus(id, action);
   } catch (error) {
     return actionError(error);
@@ -60,12 +69,18 @@ export async function productAction(
     success: true,
     message:
       action === "delete"
-        ? "PRODUCT DELETED."
-        : action === "sold"
-          ? "PRODUCT MARKED SOLD."
-          : action === "archived"
-            ? "PRODUCT ARCHIVED."
-            : "PRODUCT RESTORED.",
+        ? pendingCleanup
+          ? "PRODUCT DELETED. Unused image cleanup is pending; retry it from Products."
+          : "PRODUCT DELETED."
+        : action === "feature"
+          ? "PRODUCT FEATURED."
+          : action === "unfeature"
+            ? "PRODUCT REMOVED FROM FEATURED."
+            : action === "sold"
+              ? "PRODUCT MARKED SOLD."
+              : action === "archived"
+                ? "PRODUCT ARCHIVED."
+                : "PRODUCT RESTORED.",
   };
 }
 export async function saveCategoryAction(

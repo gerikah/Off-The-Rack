@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import { publicMetadata } from "@/lib/seo";
 import { getArchivedProducts } from "@/lib/data/products";
 import { ProductCard } from "@/components/product-card";
 import { Button, SectionHeading } from "@/components/ui";
-export const metadata: Metadata = { title: "The archive" };
+export const metadata: Metadata = publicMetadata(
+  "The archive",
+  "Explore sold and archived Off The Rack pieces: a record of one-of-one hand-painted denim and reworked wearable art.",
+  "/archive",
+);
 export const dynamic = "force-dynamic";
 export default async function ArchivePage() {
   const products = await getArchivedProducts();

@@ -6,6 +6,13 @@ import type {
   Inquiry,
   NewsletterSubscriber,
 } from "./types";
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 type Table<
   Row,
   Required extends keyof Row,
@@ -25,6 +32,14 @@ type Table<
 export type Database = {
   public: {
     Tables: {
+      product_image_cleanup: Table<
+        {
+          storage_path: string;
+          created_at: string;
+          completed_at: string | null;
+        },
+        "storage_path"
+      >;
       admin_users: Table<{ id: string; created_at: string }, "id">;
       categories: Table<Category, "name" | "slug">;
       products: Table<
@@ -70,6 +85,39 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      otr_newsletter_admin: {
+        Args: { action: string; payload?: Json };
+        Returns: Json;
+      };
+      otr_newsletter_unsubscribe: {
+        Args: { token_hash_value: string };
+        Returns: undefined;
+      };
+      otr_claim_image_cleanup: {
+        Args: { object_path: string };
+        Returns: boolean;
+      };
+      otr_complete_image_cleanup: {
+        Args: { object_path: string };
+        Returns: undefined;
+      };
+      otr_save_product_image: {
+        Args: {
+          product_uuid: string;
+          image_uuid: string | null;
+          image_data: {
+            alt_text: string;
+            is_primary: boolean;
+            storage_path?: string;
+            image_url?: string;
+          };
+        };
+        Returns: undefined;
+      };
+      otr_remove_product_image: {
+        Args: { product_uuid: string; image_uuid: string };
+        Returns: undefined;
+      };
       otr_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       otr_delete_product: {
         Args: { product_uuid: string };

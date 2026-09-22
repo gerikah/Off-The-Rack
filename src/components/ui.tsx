@@ -115,3 +115,17 @@ export function Marquee({ reverse = false }: { reverse?: boolean }) {
     </div>
   );
 }
+
+export function CatalogSkeleton() {
+  return (
+    <div className="product-grid catalog-skeleton" aria-hidden="true">
+      {Array.from({ length: 4 }, (_, index) => (
+        <div key={index}>
+          <div className="skeleton-image" />
+          <div className="skeleton-line" />
+          <div className="skeleton-line skeleton-line-short" />
+        </div>
+      ))}
+    </div>
+  );
+}
