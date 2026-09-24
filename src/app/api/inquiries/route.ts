@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { inquirySchema } from "@/lib/validation";
 import { createInquiry } from "@/lib/data/inquiries";
+import { sendInquiryEmails } from "@/lib/email/loops";
 import {
   limitPublicRequest,
   PublicRequestError,
@@ -37,8 +38,15 @@ export async function POST(request: Request) {
     );
   try {
     validateFormTiming(parsed.data.started_at);
-    await createInquiry(parsed.data);
-    return NextResponse.json({ mode: "live" }, { status: 201 });
+    const inquiry = await createInquiry(parsed.data);
+    const confirmation = await sendInquiryEmails(inquiry);
+    return NextResponse.json(
+      {
+        mode: "live",
+        emailStatus: confirmation === "accepted" ? "accepted" : "pending",
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return NextResponse.json(
       {

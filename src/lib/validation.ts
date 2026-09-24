@@ -1,14 +1,16 @@
 import { z } from "zod";
 const optionalText = (max: number) =>
   z.string().trim().max(max).optional().default("");
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254)
+  .pipe(z.email("Enter a valid email address."));
 export const inquirySchema = z
   .object({
     customer_name: z.string().trim().min(2, "Enter your full name.").max(120),
-    email: z
-      .email("Enter a valid email address.")
-      .trim()
-      .toLowerCase()
-      .max(254),
+    email,
     mobile: optionalText(40),
     inquiry_type: z.enum(["product", "custom", "general"]),
     product_id: z.uuid().nullable(),
@@ -52,7 +54,7 @@ export const inquirySchema = z
     }
   });
 export const newsletterSchema = z.object({
-  email: z.email("Enter a valid email address.").trim().toLowerCase().max(254),
+  email,
   consent: z.literal(true, {
     error: "Please agree to receive drop-list emails.",
   }),

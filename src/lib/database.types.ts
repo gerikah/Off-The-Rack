@@ -85,6 +85,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      otr_subscribe_newsletter: {
+        Args: { email_value: string; consent_value: boolean };
+        Returns: Json;
+      };
       otr_newsletter_admin: {
         Args: { action: string; payload?: Json };
         Returns: Json;

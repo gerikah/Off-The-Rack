@@ -1,6 +1,8 @@
 // Local-only PostgREST test double. Never imported by the application.
 import { createServer } from "node:http";
 import { newsletterFixture } from "./newsletter.mjs";
+import { loopsFixture } from "./loops.mjs";
+const loops = loopsFixture();
 const newsletter = newsletterFixture();
 const timestamp = "2026-09-01T00:00:00Z";
 const categories = ["Jackets", "Pants", "Tops", "Accessories", "Custom"].map(
@@ -167,7 +169,9 @@ createServer(async (req, res) => {
         : {};
     if (url.pathname === "/__control") {
       if (req.method === "POST") {
-        if (body.shareImage) {
+        if (body.loops) {
+          loops.configure(body.loops);
+        } else if (body.shareImage) {
           const source = productRows
             .flatMap((row) => row.images || [])
             .find((image) => image.id === body.shareImage);
@@ -189,6 +193,7 @@ createServer(async (req, res) => {
           membership = true;
           sessions.clear();
           newsletter.reset();
+          loops.reset();
           storageObjects.clear();
           imageCleanup.clear();
           productRows = scenario === "empty" ? [] : structuredClone(products);
@@ -205,10 +210,12 @@ createServer(async (req, res) => {
         categories: categoryRows,
         inquiries: inquiryRows,
         newsletter: newsletter.state(),
+        loops: loops.state(),
         storage: [...storageObjects.keys()],
         cleanup: [...imageCleanup.values()],
       });
     }
+    if (await loops.handle(req, res, url.pathname, body)) return;
     if (url.pathname === "/health") return send(res, 200, { ok: true });
     const token = req.headers.authorization?.replace(/^Bearer /i, ""),
       user = sessions.get(token),
@@ -271,6 +278,21 @@ createServer(async (req, res) => {
       search: url.search,
       admin: !!admin,
     });
+    if (table === "otr_subscribe_newsletter") {
+      if (scenario === "error")
+        return send(res, 403, {
+          code: "42501",
+          message: "PRIVATE SQL ERROR MUST NOT LEAK",
+        });
+      const result = loops.signup(body);
+      if (result.status !== "already_subscribed")
+        writes.push({
+          table: "newsletter_subscribers",
+          method: "POST",
+          body: { email: body.email_value, is_active: true },
+        });
+      return send(res, 200, result);
+    }
     const newsletterResult = newsletter.handle(table, body, admin);
     if (newsletterResult)
       return send(res, newsletterResult.status, newsletterResult.data);

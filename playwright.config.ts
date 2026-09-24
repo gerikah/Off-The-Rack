@@ -23,8 +23,8 @@ export default defineConfig({
           {
             command:
               process.env.PLAYWRIGHT_PRODUCTION === "true"
-                ? "node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3100"
-                : "node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3100",
+                ? "node --import ./tests/fixtures/loops-transport.mjs node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3100"
+                : "node --import ./tests/fixtures/loops-transport.mjs node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3100",
             url: "http://127.0.0.1:3100",
             reuseExistingServer: false,
             timeout: 120_000,
@@ -34,6 +34,13 @@ export default defineConfig({
                 "local-test-publishable-key",
               NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
               RESEND_API_KEY: "",
+              LOOPS_API_KEY: "loops_test_only_do_not_send",
+              LOOPS_WELCOME_EVENT_NAME: "otr_newsletter_subscribed",
+              LOOPS_NEWSLETTER_MAILING_LIST_ID: "fixture-drop-list",
+              LOOPS_INQUIRY_TRANSACTIONAL_ID: "fixture-inquiry-template",
+              LOOPS_ADMIN_NOTIFICATION_TRANSACTIONAL_ID:
+                "fixture-admin-template",
+              ADMIN_NOTIFICATION_EMAIL: "admin-notifications@example.invalid",
               NEWSLETTER_SEND_ENABLED: "false",
               NEXT_PUBLIC_SITE_URL: "https://offtherack.vercel.app",
             },

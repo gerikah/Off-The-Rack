@@ -11,17 +11,27 @@ const env = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
   NEXT_PUBLIC_SITE_URL: "https://offtherack.vercel.app",
   RESEND_API_KEY: "",
+  LOOPS_API_KEY: "loops_test_only_do_not_send",
+  LOOPS_WELCOME_EVENT_NAME: "otr_newsletter_subscribed",
+  LOOPS_NEWSLETTER_MAILING_LIST_ID: "fixture-drop-list",
+  LOOPS_INQUIRY_TRANSACTIONAL_ID: "fixture-inquiry-template",
+  LOOPS_ADMIN_NOTIFICATION_TRANSACTIONAL_ID: "fixture-admin-template",
+  ADMIN_NOTIFICATION_EMAIL: "admin-notifications@example.invalid",
   NEWSLETTER_SEND_ENABLED: "false",
   NEXT_TELEMETRY_DISABLED: "1",
   PLAYWRIGHT_EXTERNAL_SERVER: "true",
 };
 const children = [];
 function child(file, args) {
-  const processHandle = spawn(process.execPath, [file, ...args], {
-    env,
-    stdio: "inherit",
-    windowsHide: true,
-  });
+  const processHandle = spawn(
+    process.execPath,
+    ["--import", "./tests/fixtures/loops-transport.mjs", file, ...args],
+    {
+      env,
+      stdio: "inherit",
+      windowsHide: true,
+    },
+  );
   children.push(processHandle);
   return processHandle;
 }

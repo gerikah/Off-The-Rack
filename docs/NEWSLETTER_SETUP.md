@@ -1,5 +1,7 @@
 # Newsletter setup and operation
 
+**Legacy Resend campaign guide.** Loops is now the primary contact/email platform: follow [Loops setup](LOOPS_SETUP.md) for signup, reactivation, welcome workflows and inquiry confirmations. The existing admin campaign tools below remain available, but keep `NEWSLETTER_SEND_ENABLED=false` when using Loops; their unsubscribe states are not automatically synchronized. Migration 006 supersedes the pre-006 signup behavior below: fresh consent can reactivate an inactive subscriber, and existing active addresses receive a distinct already-subscribed response.
+
 The repository implements delivery; the provider account, sender verification, secrets, deployment, and real inbox checks still require the project owner. No real email was sent during implementation. Subscriber campaigns are disabled unless the server environment contains exactly `NEWSLETTER_SEND_ENABLED=true`.
 
 ## Architecture and preserved data

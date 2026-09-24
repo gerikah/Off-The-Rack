@@ -217,10 +217,12 @@ test("custom validation, saved fields, newsletter success and duplicate", async 
       .fill("integration@example.invalid");
     await page.locator(".newsletter-form").getByRole("checkbox").check();
     await page.waitForTimeout(1_300);
-    await page.getByRole("button", { name: "Subscribe", exact: true }).click();
+    await page.getByRole("button", { name: /^subscribe$/i }).click();
     await expect(
       page.locator(".newsletter-form-wrap [role=status]"),
-    ).toContainText("IF ELIGIBLE, YOUR EMAIL IS ON THE DROP LIST.");
+    ).toContainText(
+      attempt === 0 ? "YOU'RE ON THE LIST." : "YOU'RE ALREADY ON THE LIST.",
+    );
     await expect(page.getByLabel("Email address", { exact: true })).toHaveValue(
       "",
     );

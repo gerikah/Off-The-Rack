@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { newsletterSchema } from "@/lib/validation";
 import { subscribeToNewsletter } from "@/lib/data/newsletter";
+import { sendWelcomeEmail, upsertNewsletterContact } from "@/lib/email/loops";
 import {
   limitPublicRequest,
   PublicRequestError,
@@ -18,9 +19,21 @@ export async function POST(request: Request) {
         "Please enter a valid email and agree to receive updates.",
       );
     validateFormTiming(parsed.data.started_at);
-    await subscribeToNewsletter(parsed.data);
+    const subscription = await subscribeToNewsletter(parsed.data);
+    let emailStatus: "accepted" | "pending" | "unchanged" = "unchanged";
+    if (subscription.sync) {
+      const contact = await upsertNewsletterContact(parsed.data.email);
+      emailStatus = contact === "accepted" ? "accepted" : "pending";
+      if (
+        contact === "accepted" &&
+        subscription.status !== "already_subscribed"
+      ) {
+        const welcome = await sendWelcomeEmail(parsed.data.email);
+        if (welcome !== "accepted") emailStatus = "pending";
+      }
+    }
     return NextResponse.json(
-      { mode: "live" },
+      { mode: "live", status: subscription.status, emailStatus },
       { status: 200, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
@@ -29,7 +42,7 @@ export async function POST(request: Request) {
         error:
           error instanceof PublicRequestError
             ? error.message
-            : "We couldn't save your email. Please try again shortly.",
+            : "COULDN'T ADD YOU TO THE LIST. Please try again.",
       },
       {
         status: error instanceof PublicRequestError ? error.status : 503,

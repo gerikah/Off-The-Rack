@@ -2,14 +2,16 @@ import "server-only";
 import { getSupabase } from "../supabase";
 import { inquirySchema } from "../validation";
 import { logDataError } from "./errors";
+import type { InquiryEmail } from "../email/types";
 export async function createInquiry(input: unknown) {
   const value = inquirySchema.parse(input);
   if (value.website) throw new Error("Invalid submission.");
   const client = getSupabase();
+  let product: InquiryEmail["product"];
   if (value.inquiry_type === "product") {
     const { data, error } = await client
       .from("products")
-      .select("id")
+      .select("id,name,price,slug")
       .eq("id", value.product_id!)
       .eq("status", "available")
       .maybeSingle();
@@ -19,6 +21,7 @@ export async function createInquiry(input: unknown) {
         "Please choose a piece from the collection and try again.",
       );
     }
+    product = { name: data.name, price: Number(data.price), slug: data.slug };
   }
   const custom = value.inquiry_type === "custom";
   const { error } = await client.from("inquiries").insert({
@@ -38,4 +41,11 @@ export async function createInquiry(input: unknown) {
     logDataError("create inquiry", error);
     throw new Error("We couldn't send your inquiry. Please try again shortly.");
   }
+  return {
+    email: value.email,
+    customerName: value.customer_name,
+    inquiryType: value.inquiry_type,
+    message: value.message,
+    product,
+  } satisfies InquiryEmail;
 }

@@ -2,7 +2,7 @@
 
 **Wearable art. No repeats.** A responsive catalog for one-of-one hand-painted and customized clothing from the Philippines.
 
-[Live storefront](https://offtherack.vercel.app/) · [Project documentation](docs/PROJECT_DOCUMENTATION.md) · [Audit](docs/AUDIT.md) · [Newsletter setup](docs/NEWSLETTER_SETUP.md)
+[Live storefront](https://offtherack.vercel.app/) · [Project documentation](docs/PROJECT_DOCUMENTATION.md) · [Audit](docs/AUDIT.md) · [Loops email setup](docs/LOOPS_SETUP.md)
 
 Customers browse and send inquiries. Availability, payment and delivery are confirmed manually; there is no checkout or automatic reservation.
 
@@ -10,7 +10,7 @@ Customers browse and send inquiries. Availability, payment and delivery are conf
 
 - Search, category/availability filters, sorting, removable filter selections, local saved pieces, share/copy links and accessible product galleries.
 - Responsive editorial design, local fonts, optimized images, skeletons, subtle interactions and reduced-motion support.
-- Product and custom inquiries, consent-based newsletter signup and unsubscribe.
+- Product and custom inquiries with Loops confirmations; newsletter signup, reactivation, contact sync and a branded Loops welcome workflow.
 - Supabase email/password admin login with a database allowlist; product CRUD, featured/sold/archive/restore actions, categories and inquiry statuses.
 - Product image selection, preview, compression, upload, replacement, removal, cover selection, alt text and safe cleanup of managed files.
 - Admin newsletter drafts, previews, recipient counts, confirmed sending, test email and resumable batches. **Email delivery requires manual provider configuration.**
@@ -20,7 +20,7 @@ Customers browse and send inquiries. Availability, payment and delivery are conf
 
 The existing application is **Next.js 16 App Router, React 19 and TypeScript**, with Supabase Auth/Postgres/Storage and Vercel. It is not a Vite SPA. Zod validates input; CSS supplies motion; sharp prepares image uploads. Playwright/axe cover browser behavior and PGlite checks PostgreSQL migration/RLS behavior in isolation.
 
-Server components query catalog data using a stateless public Supabase client. Admin data/actions verify the user and database allowlist with a cookie-aware SSR client. Next server routes deliver email through Resend; no separate Edge Function is necessary. Provider credentials stay server-only. No Supabase service-role key is needed anywhere.
+Server components query catalog data using a stateless public Supabase client. Admin data/actions verify the user and database allowlist with a cookie-aware SSR client. Next server routes integrate Loops after Supabase saves; existing Resend admin campaigns are preserved as legacy tools. Provider credentials stay server-only. No Supabase service-role key or separate Edge Function is needed.
 
 ## Local development
 
@@ -39,7 +39,7 @@ npm run dev
 
 Required catalog variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` fallback), `NEXT_PUBLIC_SITE_URL`. Optional public contact/social overrides are listed in `.env.example`.
 
-Server email variables: `RESEND_API_KEY`, `NEWSLETTER_FROM`, optional `NEWSLETTER_REPLY_TO`, `NEWSLETTER_POSTAL_ADDRESS`, `NEWSLETTER_UNSUBSCRIBE_SECRET`, and `NEWSLETTER_SEND_ENABLED=false` until campaign acceptance testing is complete. Values in documentation are placeholders only. Existing local credentials have not been changed.
+Server email variables: `LOOPS_API_KEY`, `LOOPS_WELCOME_EVENT_NAME`, and `LOOPS_INQUIRY_TRANSACTIONAL_ID`. Optional settings are `LOOPS_NEWSLETTER_MAILING_LIST_ID`, `LOOPS_ADMIN_NOTIFICATION_TRANSACTIONAL_ID` and `ADMIN_NOTIFICATION_EMAIL`. Follow [Loops setup](docs/LOOPS_SETUP.md) to publish templates and activate the welcome workflow. Keep the legacy `NEWSLETTER_SEND_ENABLED=false` when using Loops for marketing. Values in documentation are placeholders only; existing local credentials have not been changed.
 
 ## Supabase and admin setup
 
@@ -50,7 +50,7 @@ This repository extends an existing connected schema. **Never replay `supabase/m
 3. Apply only the new files, in order: `003_product_images.sql`, `004_newsletter.sql`, `005_submission_security.sql`. They are transactional and idempotent against the documented current schema. Follow the preflight/rollout procedure in the project documentation.
 4. Create a confirmed email/password user in Supabase Auth and enroll its UUID in `public.admin_users`; never assign access through editable user metadata. Sign in at `/admin/login`.
 5. Migration 003 configures the public `product-images` bucket and admin Storage rules. Read [image operations](docs/PRODUCT_IMAGES.md), including private-bucket safeguards and cleanup limitations.
-6. Configure the email provider using [the complete manual guide](docs/NEWSLETTER_SETUP.md). Drafting works separately from configured delivery.
+6. Apply `006_loops_subscriptions.sql` after 002–005, then configure Loops using [the manual guide](docs/LOOPS_SETUP.md). The migration adds consent-based reactivation and normalized email uniqueness while preserving RLS. It stops for manual review if normalized duplicates exist.
 
 For a brand-new Supabase project, obtain a reviewed schema-only export from the existing project and its current policies first. The historic migration chain is deliberately not a bootstrap installer.
 

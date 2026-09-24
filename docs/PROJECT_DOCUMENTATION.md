@@ -1,5 +1,7 @@
 # Off The Rack project documentation
 
+Email update: [Loops setup](LOOPS_SETUP.md) documents the primary contact platform, marketing welcome workflow, transactional inquiry confirmations, migration 006, and subscriber reactivation. Existing Resend admin campaigns remain as legacy tools and should stay disabled while Loops owns marketing. The campaign/batch details below describe those legacy tools.
+
 ## Application and route map
 
 This extends the existing Next.js App Router application. Supabase is the sole catalog source. There is no checkout, payment gateway, shopping bag, reservation or customer account requirement. The implementation preserves the dark editorial design, typography, colors, photography and responsive layout.
@@ -88,7 +90,7 @@ Replacement never overwrites the old URL. Database reference guards and a cleanu
 
 [NEWSLETTER_SETUP.md](NEWSLETTER_SETUP.md) contains the exact provider account, sender/domain verification, API-key creation, Vercel secret configuration, testing, unsubscribe and production rollout instructions. This implementation uses **Next server routes on Vercel**, so it needs no Supabase Edge Function deployment or Supabase service-role key. Resend was chosen because the repository had no existing mail provider. Provider-specific delivery code is contained in `src/lib/newsletter/server.ts`.
 
-New signups explicitly consent. Existing records remain intact and only enter campaigns after an administrator verifies evidence of voluntary newsletter signup. The form returns a neutral success for duplicates to avoid exposing list membership. Inactive recipients are not reactivated by public signup.
+New signups explicitly consent. Migration 006 returns a distinct already-subscribed status and reactivates inactive recipients on fresh form consent, preserving their IDs and creation timestamps. Existing legacy records remain intact and require verified signup evidence before inclusion in legacy campaigns. See the Loops guide for the current subscription lifecycle and limitations.
 
 Campaigns are saved immutable drafts, previewed, optionally tested to the verified admin email and confirmed with the current eligible count. Each send action claims at most 25 recipients under a database lease. Every message has exactly one `to` address, escaped plain-text content, a postal footer and unsubscribe links. Database unique campaign/subscriber pairs and provider idempotency keys prevent ordinary duplicate requests. A stored payload fingerprint protects retries from content/config changes. Provider idempotency lasts only 24 hours; the app pauses uncertain batches after 23 hours for manual reconciliation, rather than guessing whether to resend. A provider accepted count is not an inbox delivery count.
 

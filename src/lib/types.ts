@@ -71,6 +71,8 @@ export type NewsletterSubscriber = {
 };
 export type SubmissionResult = {
   mode: "live";
+  status?: "subscribed" | "already_subscribed" | "reactivated";
+  emailStatus?: "accepted" | "pending" | "unchanged";
   alreadySubscribed?: boolean;
   error?: string;
 };

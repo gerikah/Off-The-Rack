@@ -31,6 +31,8 @@ export function NewsletterForm() {
     }
     submitting.current = true;
     setState("pending");
+    setMessage("JOINING THE DROP LIST...");
+    let failureMessage = "COULDN'T ADD YOU TO THE LIST. Please try again.";
     try {
       const response = await fetch("/api/newsletter", {
         method: "POST",
@@ -38,25 +40,27 @@ export function NewsletterForm() {
         body: JSON.stringify(parsed.data),
       });
       const result = (await response.json()) as SubmissionResult;
-      if (!response.ok)
-        throw new Error(
-          result.error || "We couldn’t save your email. Please try again.",
-        );
+      if (!response.ok) {
+        failureMessage = result.error || failureMessage;
+        throw new Error("Submission failed");
+      }
       setState(result.mode);
+      const heading =
+        result.status === "already_subscribed"
+          ? "YOU'RE ALREADY ON THE LIST."
+          : "YOU'RE ON THE LIST.";
       setMessage(
-        "THANK YOU. IF ELIGIBLE, YOUR EMAIL IS ON THE DROP LIST. You can unsubscribe from any newsletter.",
+        result.emailStatus === "pending"
+          ? `${heading} Your subscription is saved, but the email update couldn't be completed right now.`
+          : `${heading} You can unsubscribe anytime.`,
       );
       if (result.mode === "live") {
         form.reset();
         startedAt.current = Date.now();
       }
-    } catch (error) {
+    } catch {
       setState("error");
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong. Please try again.",
-      );
+      setMessage(failureMessage);
     } finally {
       submitting.current = false;
     }
@@ -69,13 +73,16 @@ export function NewsletterForm() {
           JOIN THE DROP LIST<sup>↗</sup>
         </h2>
         <p>
-          New pieces, custom slots, and upcoming drops.
-          <br />
-          Straight to your inbox.
+          Be the first to know about new arrivals, custom slots, and exclusive
+          drops.
         </p>
       </div>
       <div className="newsletter-form-wrap">
-        <form onSubmit={submit} className="newsletter-form">
+        <form
+          onSubmit={submit}
+          className="newsletter-form"
+          aria-busy={state === "pending"}
+        >
           <label className="sr-only" htmlFor="newsletter-email">
             Email address
           </label>
@@ -85,6 +92,7 @@ export function NewsletterForm() {
             type="email"
             placeholder="Your email address"
             autoComplete="email"
+            aria-describedby="newsletter-feedback"
             required
             maxLength={254}
             disabled={state === "pending"}
@@ -96,7 +104,7 @@ export function NewsletterForm() {
             </label>
           </div>
           <button type="submit" disabled={state === "pending"}>
-            {state === "pending" ? "Joining…" : "Subscribe"}
+            {state === "pending" ? "JOINING..." : "SUBSCRIBE"}
             <Arrow />
           </button>
           <label className="newsletter-consent">
@@ -113,8 +121,11 @@ export function NewsletterForm() {
           </label>
         </form>
         <p
+          id="newsletter-feedback"
           className={`form-feedback ${state === "error" ? "is-error" : ""}`}
           role={state === "error" ? "alert" : "status"}
+          aria-live="polite"
+          aria-atomic="true"
         >
           {message || "New drops and custom slots. Only the good stuff."}
         </p>

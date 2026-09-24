@@ -43,6 +43,7 @@ try {
     "003_product_images.sql",
     "004_newsletter.sql",
     "005_submission_security.sql",
+    "006_loops_subscriptions.sql",
   ];
   for (let pass = 0; pass < 2; pass++)
     for (const name of migrations) {
@@ -386,6 +387,99 @@ try {
     "paused",
     "uncertain old batch never retried",
   );
+  // 006: real SQL constraints, atomic subscription lifecycle, and no read/update grants.
+  await role("anon");
+  const subscribe = async (email, consent = true) =>
+    (
+      await db.query(
+        "select public.otr_subscribe_newsletter($1,$2) as result",
+        [email, consent],
+      )
+    ).rows[0].result;
+  equal(
+    await subscribe("  LOOPS@EXAMPLE.INVALID  "),
+    { status: "subscribed", sync: true },
+    "new signup normalizes and records consent",
+  );
+  equal(
+    await subscribe("loops@example.invalid"),
+    { status: "already_subscribed", sync: false },
+    "rapid duplicate does not repeat provider work",
+  );
+  await denied("select * from public.newsletter_signup_attempts");
+  await denied("delete from public.newsletter_signup_attempts");
+  await denied("select public.otr_subscribe_newsletter('invalid',true)");
+  await denied(
+    "select public.otr_subscribe_newsletter('consent@example.invalid',false)",
+  );
+  await denied(
+    "select public.otr_subscribe_newsletter('consent@example.invalid',null)",
+  );
+  await denied(
+    "update public.newsletter_subscribers set is_active=true where email='inactive@example.invalid'",
+  );
+  const before = await owner(
+    "select id,created_at from public.newsletter_subscribers where email='inactive@example.invalid'",
+  );
+  await role("anon");
+  equal(
+    await subscribe("inactive@example.invalid"),
+    { status: "reactivated", sync: true },
+    "fresh consent reactivates existing row",
+  );
+  const after = await owner(
+    "select id,created_at,is_active,consent_source,unsubscribed_at from public.newsletter_subscribers where email='inactive@example.invalid'",
+  );
+  equal(
+    after.rows[0],
+    {
+      ...before.rows[0],
+      is_active: true,
+      consent_source: "storefront_signup",
+      unsubscribed_at: null,
+    },
+    "reactivation preserves identity and creation time",
+  );
+  equal(
+    (
+      await db.query(
+        "select count(*)::int as n from public.newsletter_subscribers where lower(trim(email))='loops@example.invalid'",
+      )
+    ).rows[0].n,
+    1,
+    "duplicate did not create a row",
+  );
+  await db.query(
+    "update public.newsletter_signup_attempts set created_at=now()-interval '2 minutes'",
+  );
+  await role("authenticated", member);
+  equal(
+    await subscribe("loops@example.invalid"),
+    { status: "already_subscribed", sync: true },
+    "ordinary member may explicitly resubmit after cooldown",
+  );
+  equal(
+    (await db.query("select * from public.newsletter_subscribers")).rows,
+    [],
+    "signup does not grant subscriber reads",
+  );
+  await role("postgres");
+  equal(
+    (
+      await db.query(
+        "select count(*)::int as n from pg_indexes where indexname='otr_newsletter_normalized_unique' and indexdef like 'CREATE UNIQUE%'",
+      )
+    ).rows[0].n,
+    1,
+    "normalized email uniqueness enforced in database",
+  );
+  await db.query(
+    "insert into public.newsletter_signup_attempts(email_hash) select md5('quota-'||n::text) from generate_series(1,30) n",
+  );
+  await role("anon");
+  await denied(
+    "select public.otr_subscribe_newsletter('quota@example.invalid',true)",
+  );
   await role("postgres");
   const unprotected = (
     await db.query(
@@ -394,7 +488,7 @@ try {
   ).rows;
   equal(unprotected, [], "every application table has RLS");
   console.log(
-    `Database verification passed: ${checks} assertions; migrations 002-005 replayed twice; no live services.`,
+    `Database verification passed: ${checks} assertions; migrations 002-006 replayed twice; no live services.`,
   );
 } catch (error) {
   console.error("Database verification failed:", {

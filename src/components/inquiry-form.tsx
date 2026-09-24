@@ -88,6 +88,12 @@ export function InquiryForm({
             Thanks for reaching out. We&apos;ll get back to you with the next
             steps.
           </p>
+          {result.emailStatus === "pending" && (
+            <p>
+              Your inquiry is saved, but we couldn&apos;t send the confirmation
+              email right now. There&apos;s no need to submit it again.
+            </p>
+          )}
           <Button href="/shop">Continue shopping</Button>
           <button className="text-link" onClick={() => setResult(null)}>
             Back to inquiry <Arrow />
