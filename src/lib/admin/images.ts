@@ -23,6 +23,48 @@ const imageDetails = z.object({
 });
 
 type Client = SupabaseClient<Database>;
+type ImageFailure = {
+  code?: string;
+  statusCode?: string | number;
+  status?: string | number;
+  message?: string;
+};
+
+function logImageFailure(
+  operation: string,
+  error: ImageFailure,
+  productId: string,
+  storagePath?: string,
+) {
+  if (process.env.NODE_ENV !== "production") {
+    console.error("[product-images] operation failed", {
+      operation,
+      bucket: PRODUCT_IMAGE_BUCKET,
+      storagePath,
+      productId,
+      code: error.code || "storage_error",
+      status: error.statusCode || error.status,
+    });
+  }
+}
+
+function uploadMessage(error: ImageFailure) {
+  const status = Number(error.statusCode || error.status);
+  const value = `${error.code || ""} ${error.message || ""}`.toLowerCase();
+  if (
+    status === 401 ||
+    status === 403 ||
+    /unauthor|permission|policy/.test(value)
+  )
+    return "You are not authorized to upload images.";
+  if (status === 404 || /bucket.*not found|not found.*bucket/.test(value))
+    return "Image storage is not configured. The product-images bucket is unavailable.";
+  if (status === 413 || /too large|size limit|maximum allowed/.test(value))
+    return "Image file is too large.";
+  if (/mime|content.?type|unsupported/.test(value))
+    return "Unsupported image type.";
+  return "Could not upload image.";
+}
 export async function cleanupImageFiles(
   client: Client,
   paths: (string | null)[],
@@ -161,10 +203,8 @@ export async function saveProductImage(form: FormData) {
         upsert: false,
       });
     if (error) {
-      logDataError("upload product image", {});
-      throw new AdminError(
-        "Image upload failed. Check the product-images bucket and Storage policies, then try again.",
-      );
+      logImageFailure("upload", error, details.product_id, path);
+      throw new AdminError(uploadMessage(error));
     }
     upload = {
       storage_path: path,
@@ -184,12 +224,26 @@ export async function saveProductImage(form: FormData) {
     },
   });
   if (saved.error) {
-    if (upload) await cleanupImageFiles(client, [upload.storage_path]);
+    const cleanupPending = upload
+      ? await cleanupImageFiles(client, [upload.storage_path])
+      : false;
+    logImageFailure(
+      "save image record",
+      saved.error,
+      details.product_id,
+      upload?.storage_path,
+    );
     if (saved.error.code === "23514")
       throw new AdminError(
         "Could not save this image. Each product supports up to 12 images; refresh and try again.",
       );
-    databaseError("save product image", saved.error);
+    if (saved.error.code === "42501")
+      throw new AdminError("You are not authorized to save image records.");
+    throw new AdminError(
+      cleanupPending
+        ? "Could not save image record. The unused file is queued for cleanup."
+        : "Could not save image record. The uploaded file was rolled back.",
+    );
   }
   const pendingCleanup =
     upload && previous

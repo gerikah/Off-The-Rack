@@ -139,12 +139,12 @@ test("gallery order, optional metadata, related pieces and product association",
   await page.goto("/product/temp-piece-0");
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
-    /Fixture view 2/,
+    /Fixture view 0/,
   );
   await page.getByRole("button", { name: "Show view 2" }).click();
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
-    /Fixture view 0/,
+    /Fixture view 1/,
   );
   await expect(page.locator(".related-section")).not.toContainText(
     "TEMP Bestseller",

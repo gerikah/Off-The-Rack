@@ -127,14 +127,14 @@ test("gallery supports previous, next, arrow and endpoint keyboard controls", as
     .click();
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
-    /Fixture view 0/,
+    /Fixture view 1/,
   );
   await page
     .getByRole("button", { name: "Previous product view", exact: true })
     .click();
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
-    /Fixture view 2/,
+    /Fixture view 0/,
   );
   await page
     .getByRole("group", { name: "Product image gallery", exact: true })
@@ -142,17 +142,17 @@ test("gallery supports previous, next, arrow and endpoint keyboard controls", as
   await page.keyboard.press("ArrowLeft");
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
-    /Fixture view 1/,
+    /Fixture view 2/,
   );
   await page.keyboard.press("Home");
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
-    /Fixture view 2/,
+    /Fixture view 0/,
   );
   await page.keyboard.press("End");
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
-    /Fixture view 1/,
+    /Fixture view 2/,
   );
   await page.getByRole("button", { name: "Show view 2", exact: true }).focus();
   await page.keyboard.press("ArrowRight");

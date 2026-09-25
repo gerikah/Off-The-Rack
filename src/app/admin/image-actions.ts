@@ -19,8 +19,12 @@ export async function productImageAction(
       form.get("operation") === "remove"
         ? await removeProductImage(form)
         : await saveProductImage(form);
-    revalidatePath("/admin", "layout");
-    revalidatePath("/", "layout");
+    revalidatePath("/admin/products");
+    revalidatePath("/admin/products/[id]/edit", "page");
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/archive");
+    revalidatePath("/product/[slug]", "page");
     return {
       success: true,
       images: result.images,

@@ -18,7 +18,7 @@ const csp = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
-  experimental: { serverActions: { bodySizeLimit: "4mb" } },
+  experimental: { serverActions: { bodySizeLimit: "40mb" } },
   images: {
     formats: ["image/webp"],
     remotePatterns: storageUrl

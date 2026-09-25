@@ -20,13 +20,13 @@ export function productImageUrl(url: string | null | undefined) {
   return PRODUCT_IMAGE_FALLBACK;
 }
 export function getGalleryImages(images: ProductImage[]) {
-  const ordered = [...images].sort((a, b) => a.sort_order - b.sort_order);
-  const primary = ordered.findIndex((image) => image.is_primary);
-  if (primary > 0) ordered.unshift(...ordered.splice(primary, 1));
-  return ordered;
+  return [...images].sort(
+    (a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id),
+  );
 }
 export function getPrimaryImage(product: Product) {
-  const image = getGalleryImages(product.images)[0];
+  const ordered = getGalleryImages(product.images);
+  const image = ordered.find((candidate) => candidate.is_primary) || ordered[0];
   return {
     src: productImageUrl(image?.image_url),
     alt: image?.alt_text?.trim() || product.name,

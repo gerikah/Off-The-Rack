@@ -2,11 +2,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import type { AdminProduct, AdminCategory } from "@/lib/admin/data";
-import {
-  formatPrice,
-  getGalleryImages,
-  productImageUrl,
-} from "@/lib/product-utils";
+import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
 import { productTransitions } from "@/lib/admin/validation";
 import { productAction } from "@/app/admin/actions";
 import { AdminEmpty, ImagePlaceholder, StatusBadge, adminDate } from "./ui";
@@ -128,13 +124,7 @@ export function ProductsTable({
                     {product.images?.length ? (
                       <ProductImageView
                         className="admin-product-thumbnail"
-                        src={productImageUrl(
-                          getGalleryImages(product.images)[0].image_url,
-                        )}
-                        alt={
-                          getGalleryImages(product.images)[0].alt_text ||
-                          product.name
-                        }
+                        {...getPrimaryImage(product)}
                         width={48}
                         height={54}
                         sizes="48px"

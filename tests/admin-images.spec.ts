@@ -11,10 +11,142 @@ async function login(page: Page) {
     page.getByRole("heading", { name: "Dashboard", exact: true }),
   ).toBeVisible();
   await page.goto(`/admin/products/${productId}/edit`);
-  await expect(page.getByLabel("Add an image", { exact: true })).toBeEnabled();
+  await expect(
+    page.getByLabel("Add product images", { exact: true }),
+  ).toBeEnabled();
 }
 test.beforeEach(async ({ request }) => {
   await request.post(control, { data: { scenario: "populated" } });
+});
+
+async function imageFile(name: string, color: string) {
+  return {
+    name,
+    mimeType: "image/png",
+    buffer: await sharp({
+      create: { width: 90, height: 120, channels: 3, background: color },
+    })
+      .png()
+      .toBuffer(),
+  };
+}
+
+test("admin creates a product with more than three ordered images and preserves them on text edits", async ({
+  page,
+  request,
+}) => {
+  await login(page);
+  await page.goto("/admin/products/new");
+  await page.getByLabel("Product name").fill("Four View Jacket");
+  await page
+    .getByLabel("Category", { exact: false })
+    .selectOption({ label: "Jackets" });
+  await page.getByLabel("Price (PHP)").fill("2450");
+  const files = await Promise.all([
+    imageFile("front.png", "#111111"),
+    imageFile("back.png", "#333333"),
+    imageFile("detail.png", "#777777"),
+    imageFile("label.png", "#aaaaaa"),
+  ]);
+  const imageInput = page.getByLabel("Add product images", { exact: true });
+  await imageInput.setInputFiles(files);
+  await expect(page.locator(".admin-selected-image")).toHaveCount(4);
+  await expect(page.getByText("front.png", { exact: true })).toBeVisible();
+  await imageInput.setInputFiles(files[0]);
+  await expect(page.locator(".admin-multi-images .admin-error")).toContainText(
+    "duplicate file was already selected",
+  );
+  await expect(page.locator(".admin-selected-image")).toHaveCount(4);
+  await page.getByRole("button", { name: "SAVE PRODUCT" }).click();
+  await expect(page).toHaveURL(
+    /\/admin\/products\/[0-9a-f-]+\/edit\?notice=added/,
+  );
+  await expect(page.locator(".admin-image-cover")).toHaveCount(1);
+  let state = await (await request.get(control)).json();
+  let created = state.products.find(
+    (product: { slug: string }) => product.slug === "four-view-jacket",
+  );
+  expect(created.images).toHaveLength(4);
+  expect(
+    created.images.map((image: { sort_order: number }) => image.sort_order),
+  ).toEqual([0, 1, 2, 3]);
+  expect(
+    created.images.filter((image: { is_primary: boolean }) => image.is_primary),
+  ).toHaveLength(1);
+  expect(created.images[0].is_primary).toBe(true);
+  await page.getByLabel("Color", { exact: false }).fill("Black");
+  await page.getByRole("button", { name: "SAVE CHANGES" }).click();
+  await expect(page).toHaveURL(/\/admin\/products\?notice=updated/);
+  state = await (await request.get(control)).json();
+  created = state.products.find(
+    (product: { slug: string }) => product.slug === "four-view-jacket",
+  );
+  expect(created.images).toHaveLength(4);
+});
+
+test("edit product adds multiple images without replacing the existing gallery", async ({
+  page,
+  request,
+}) => {
+  await login(page);
+  await page.goto("/admin/products/20000000-0000-4000-8000-000000000000/edit");
+  await expect(
+    page.getByText("TEMP Bestseller", { exact: true }),
+  ).toBeVisible();
+  const addInput = page
+    .locator(".admin-image-editor")
+    .last()
+    .getByLabel("Add product images", { exact: true });
+  await expect(addInput).toBeEnabled();
+  const additions = await Promise.all([
+    imageFile("inside.png", "#224466"),
+    imageFile("cuff.png", "#446688"),
+  ]);
+  await addInput.setInputFiles(additions);
+  await expect(page.locator(".admin-selected-image")).toHaveCount(2);
+  await page
+    .getByRole("button", { name: "UPLOAD SELECTED IMAGES", exact: true })
+    .click();
+  await expect(
+    page.getByText("2 images uploaded.", { exact: true }),
+  ).toBeVisible();
+  const state = await (await request.get(control)).json();
+  const product = state.products.find(
+    (item: { id: string }) =>
+      item.id === "20000000-0000-4000-8000-000000000000",
+  );
+  expect(product.images).toHaveLength(5);
+  expect(
+    product.images.map((image: { sort_order: number }) => image.sort_order),
+  ).toEqual([0, 1, 2, 3, 4]);
+});
+
+test("storage and image-record failures are categorized and uploaded orphans are cleaned up", async ({
+  page,
+  request,
+}) => {
+  const file = await imageFile("failure.png", "#aa3344");
+  await login(page);
+  await request.post(control, { data: { storageFailure: true } });
+  await page
+    .getByLabel("Add product images", { exact: true })
+    .setInputFiles(file);
+  await page
+    .getByRole("button", { name: "UPLOAD SELECTED IMAGES", exact: true })
+    .click();
+  await expect(
+    page.locator(".admin-image-editor").last().getByRole("alert"),
+  ).toContainText("Could not upload image");
+  await request.post(control, { data: { storageFailure: false } });
+  await request.post(control, { data: { imageRecordFailure: true } });
+  await page
+    .getByRole("button", { name: "UPLOAD SELECTED IMAGES", exact: true })
+    .click();
+  await expect(
+    page.locator(".admin-image-editor").last().getByRole("alert"),
+  ).toContainText("Could not save image record");
+  const state = await (await request.get(control)).json();
+  expect(state.storage).toEqual([]);
 });
 
 test("admin previews, uploads, edits alt text, replaces and removes images without deleting a shared photo", async ({
@@ -28,15 +160,15 @@ test("admin previews, uploads, edits alt text, replaces and removes images witho
     .toBuffer();
   await login(page);
   await page
-    .getByLabel("Add an image", { exact: true })
+    .getByLabel("Add product images", { exact: true })
     .setInputFiles({ name: "photo.png", mimeType: "image/png", buffer });
-  await expect(
-    page.getByText("Preview ready.", { exact: false }),
-  ).toBeVisible();
+  await expect(page.locator(".admin-selected-image")).toHaveCount(1);
   await page
-    .getByLabel("Image description (alt text)", { exact: true })
-    .fill("Hand-painted silver rose on blue denim");
-  await page.getByRole("button", { name: "Upload image", exact: true }).click();
+    .getByRole("button", { name: "UPLOAD SELECTED IMAGES", exact: true })
+    .click();
+  await expect(
+    page.getByText("1 image uploaded.", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("Cover image", { exact: true })).toBeVisible();
   let state = await (await request.get(control)).json();
   const uploaded = state.products.find(
@@ -46,14 +178,22 @@ test("admin previews, uploads, edits alt text, replaces and removes images witho
     /^products\/[a-f0-9-]+\/[a-f0-9-]+\.webp$/,
   );
   expect(uploaded.storage_path).not.toContain("photo.png");
-  expect(uploaded.alt_text).toContain("silver rose");
+  expect(uploaded.alt_text).toContain("TEMP New Arrival");
+  let existing = page.locator(".admin-image-editor").first();
+  await existing
+    .getByLabel("Image description (alt text)")
+    .fill("Hand-painted silver rose on blue denim");
+  await existing
+    .getByRole("button", { name: "Save image", exact: true })
+    .click();
+  await expect(page.getByText("Image saved.", { exact: true })).toBeVisible();
   await request.post(control, {
     data: {
       shareImage: uploaded.id,
       targetProduct: "20000000-0000-4000-8000-000000000000",
     },
   });
-  let existing = page.locator(".admin-image-editor").first();
+  existing = page.locator(".admin-image-editor").first();
   await existing
     .getByLabel("Image description (alt text)")
     .fill("Rear view of hand-painted denim");
@@ -111,7 +251,7 @@ test("admin image form rejects disguised files and rechecks membership before up
   request,
 }) => {
   await login(page);
-  await page.getByLabel("Add an image", { exact: true }).setInputFiles({
+  await page.getByLabel("Add product images", { exact: true }).setInputFiles({
     name: "disguised.png",
     mimeType: "image/png",
     buffer: Buffer.from("<svg><script>alert(1)</script></svg>"),
@@ -126,16 +266,13 @@ test("admin image form rejects disguised files and rechecks membership before up
     .png()
     .toBuffer();
   await page
-    .getByLabel("Add an image", { exact: true })
+    .getByLabel("Add product images", { exact: true })
     .setInputFiles({ name: "photo.png", mimeType: "image/png", buffer });
-  await expect(
-    page.getByText("Preview ready.", { exact: false }),
-  ).toBeVisible();
-  await page
-    .getByLabel("Image description (alt text)", { exact: true })
-    .fill("Painted flower detail");
+  await expect(page.locator(".admin-selected-image")).toHaveCount(1);
   await request.post(control, { data: { revokeMembership: true } });
-  await page.getByRole("button", { name: "Upload image", exact: true }).click();
+  await page
+    .getByRole("button", { name: "UPLOAD SELECTED IMAGES", exact: true })
+    .click();
   await expect(page).toHaveURL(/\/admin\/login/);
   expect((await (await request.get(control)).json()).storage).toEqual([]);
 });

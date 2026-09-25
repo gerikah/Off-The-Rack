@@ -905,6 +905,43 @@
   flex-wrap: wrap;
   gap: 12px;
 }
+.admin-multi-images {
+  display: grid;
+  gap: 10px;
+}
+.admin-selected-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.admin-selected-image {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 8px;
+  background: #edede8;
+}
+.admin-selected-image img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.admin-selected-image span {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-selected-image small {
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.admin-selected-image .admin-text-button {
+  justify-self: start;
+}
 .admin-root .admin-image-progress {
   font-size: 12px;
   font-weight: 500;

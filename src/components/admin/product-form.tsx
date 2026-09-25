@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import type { Category, ProductRow, ProductImage } from "@/lib/types";
 import { saveProductAction } from "@/app/admin/actions";
 import { slugify } from "@/lib/admin/validation";
-import { ProductImagesEditor } from "./product-images-editor";
+import { NewProductImages, ProductImagesEditor } from "./product-images-editor";
 export function ProductForm({
   product,
   categories,
@@ -203,14 +203,12 @@ export function ProductForm({
               {product ? (
                 <ProductImagesEditor
                   productId={product.id}
+                  productName={values.name || product.name}
                   initialImages={product.images}
                   onBusy={setImageBusy}
                 />
               ) : (
-                <p className="admin-help">
-                  Save your product details first. You will then be taken to the
-                  image editor to upload, preview and describe your photos.
-                </p>
+                <NewProductImages disabled={pending} />
               )}
             </section>
           </div>

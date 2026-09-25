@@ -44,6 +44,7 @@ try {
     "004_newsletter.sql",
     "005_submission_security.sql",
     "006_loops_subscriptions.sql",
+    "007_product_image_workflow.sql",
   ];
   for (let pass = 0; pass < 2; pass++)
     for (const name of migrations) {
@@ -488,7 +489,7 @@ try {
   ).rows;
   equal(unprotected, [], "every application table has RLS");
   console.log(
-    `Database verification passed: ${checks} assertions; migrations 002-006 replayed twice; no live services.`,
+    `Database verification passed: ${checks} assertions; migrations 002-007 replayed twice; no live services.`,
   );
 } catch (error) {
   console.error("Database verification failed:", {

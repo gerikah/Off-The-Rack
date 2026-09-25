@@ -15,6 +15,8 @@ import {
 import { requireAdmin } from "@/lib/admin/auth";
 import { actionError, AdminError } from "@/lib/admin/errors";
 import type { ActionState } from "@/lib/admin/validation";
+import { saveProductImage } from "@/lib/admin/images";
+import { logDataError } from "@/lib/data/errors";
 function refreshInventory() {
   revalidatePath("/admin", "layout");
   for (const path of ["/", "/shop", "/archive", "/sitemap.xml"])
@@ -27,15 +29,52 @@ export async function saveProductAction(
 ): Promise<ActionState> {
   await requireAdmin();
   const id = String(form.get("id") || "");
+  const imageFiles = form
+    .getAll("images")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  form.delete("images");
   let savedId = id;
   try {
+    if (imageFiles.length > 12)
+      throw new AdminError("A product can have up to 12 images.");
     const payload = {
       ...Object.fromEntries(form),
       featured: form.get("featured") === "on",
       bestseller: form.get("bestseller") === "on",
     };
     if (id) await updateProduct(id, payload);
-    else savedId = await createProduct(payload);
+    else {
+      savedId = await createProduct(payload);
+      try {
+        for (const [index, file] of imageFiles.entries()) {
+          const imageForm = new FormData();
+          imageForm.set("product_id", savedId);
+          imageForm.set("image_id", "");
+          imageForm.set(
+            "alt_text",
+            `${String(form.get("name") || "Product")}, view ${index + 1}`,
+          );
+          imageForm.set("is_primary", "no");
+          imageForm.set("operation", "save");
+          imageForm.set("image", file);
+          await saveProductImage(imageForm);
+        }
+      } catch (imageError) {
+        try {
+          await deleteProduct(savedId);
+        } catch {
+          logDataError("rollback product after image failure", {});
+          throw new AdminError(
+            "The product was created, but its images could not be completed. Open the product list and retry from Edit Product.",
+          );
+        }
+        if (imageError instanceof AdminError)
+          throw new AdminError(
+            `${imageError.message} The incomplete product was rolled back; you can try again safely.`,
+          );
+        throw imageError;
+      }
+    }
   } catch (error) {
     return actionError(error);
   }

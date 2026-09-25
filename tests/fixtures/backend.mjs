@@ -81,7 +81,9 @@ const seedInquiries = ["new", "read", "replied", "resolved"].map(
 let scenario = "populated",
   writes = [],
   queries = [],
-  membership = true;
+  membership = true,
+  storageFailure = false,
+  imageRecordFailure = false;
 let productRows = structuredClone(products),
   categoryRows = structuredClone(categories),
   inquiryRows = structuredClone(seedInquiries);
@@ -186,11 +188,17 @@ createServer(async (req, res) => {
             });
         } else if (body.revokeMembership) {
           membership = false;
+        } else if (body.storageFailure !== undefined) {
+          storageFailure = !!body.storageFailure;
+        } else if (body.imageRecordFailure !== undefined) {
+          imageRecordFailure = !!body.imageRecordFailure;
         } else {
           scenario = body.scenario || "populated";
           writes = [];
           queries = [];
           membership = true;
+          storageFailure = false;
+          imageRecordFailure = false;
           sessions.clear();
           newsletter.reset();
           loops.reset();
@@ -248,6 +256,12 @@ createServer(async (req, res) => {
         "",
       );
       if (req.method === "POST") {
+        if (storageFailure)
+          return send(res, 500, {
+            statusCode: "500",
+            error: "Storage failure",
+            message: "fixture storage failure",
+          });
         storageObjects.set(objectPath, true);
         writes.push({
           table: "storage",
@@ -348,6 +362,11 @@ createServer(async (req, res) => {
         )
           product.images[0].is_primary = true;
       } else {
+        if (imageRecordFailure)
+          return send(res, 500, {
+            code: "XX000",
+            message: "fixture image record failure",
+          });
         const existing = product.images.find(
           (image) => image.id === body.image_uuid,
         );

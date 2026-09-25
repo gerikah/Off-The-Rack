@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   getGalleryImages,
+  getPrimaryImage,
   productImageUrl,
   PRODUCT_IMAGE_FALLBACK,
 } from "../src/lib/product-utils";
@@ -19,7 +20,7 @@ const image = (
   alt_text: null,
   created_at: "2026-09-01",
 });
-test("image ordering is stable with no primary, late primary, or multiple primary flags", () => {
+test("gallery ordering follows sort order while cards prefer the primary image", () => {
   const input = [image("last", 20), image("first", 0), image("middle", 10)];
   expect(getGalleryImages(input).map((i) => i.id)).toEqual([
     "first",
@@ -32,12 +33,36 @@ test("image ordering is stable with no primary, late primary, or multiple primar
       image("first", 0),
       image("middle", 10),
     ]).map((i) => i.id),
-  ).toEqual(["last", "first", "middle"]);
+  ).toEqual(["first", "middle", "last"]);
   expect(
     getGalleryImages([image("last", 20, true), image("first", 0, true)]).map(
       (i) => i.id,
     ),
   ).toEqual(["first", "last"]);
+  expect(
+    getPrimaryImage({
+      id: "product",
+      name: "Product",
+      slug: "product",
+      short_description: null,
+      description: null,
+      price: 1,
+      category_id: null,
+      category: null,
+      size: null,
+      condition: null,
+      material: null,
+      color: null,
+      measurements: null,
+      care_instructions: null,
+      status: "available",
+      featured: false,
+      bestseller: false,
+      created_at: "2026-09-01",
+      updated_at: "2026-09-01",
+      images: [image("last", 20, true), image("first", 0)],
+    }).src,
+  ).toBe("/images/7.webp");
   expect(input.map((i) => i.id)).toEqual(["last", "first", "middle"]);
   expect(getGalleryImages([])).toEqual([]);
 });
