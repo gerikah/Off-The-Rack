@@ -31,6 +31,139 @@ async function imageFile(name: string, color: string) {
   };
 }
 
+async function renderedImageSource(image: ReturnType<Page["locator"]>) {
+  const src = await image.getAttribute("src");
+  expect(src).toBeTruthy();
+  const parsed = new URL(src!, "http://127.0.0.1:3100");
+  return parsed.pathname === "/_next/image"
+    ? parsed.searchParams.get("url")
+    : parsed.pathname;
+}
+
+async function expectRenderedImage(
+  image: ReturnType<Page["locator"]>,
+  source: string,
+) {
+  expect(await renderedImageSource(image)).toBe(source);
+  await expect
+    .poll(() =>
+      image.evaluate(
+        (element: HTMLImageElement) =>
+          element.complete && element.naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
+}
+
+test("one uploaded image is the same image on Shop, Product Details and Edit before a three-image gallery", async ({
+  page,
+  request,
+}) => {
+  await login(page);
+  const first = await imageFile("single.png", "#125f75");
+  await page
+    .getByLabel("Add product images", { exact: true })
+    .setInputFiles(first);
+  await page
+    .getByRole("button", { name: "UPLOAD SELECTED IMAGES", exact: true })
+    .click();
+  await expect(
+    page.getByText("1 image uploaded.", { exact: true }),
+  ).toBeVisible();
+
+  let state = await (await request.get(control)).json();
+  let product = state.products.find(
+    (item: { id: string }) => item.id === productId,
+  );
+  expect(state.storage).toHaveLength(1);
+  expect(product.images).toHaveLength(1);
+  const uploaded = product.images[0];
+  expect(uploaded.product_id).toBe(productId);
+  expect(uploaded.sort_order).toBe(0);
+  expect(uploaded.is_primary).toBe(true);
+  expect(uploaded.storage_path).toBe(state.storage[0]);
+  expect(uploaded.image_url).toBe(
+    `http://127.0.0.1:4318/storage/v1/object/public/product-images/${uploaded.storage_path}`,
+  );
+  await expectRenderedImage(
+    page.locator(".admin-image-preview img").first(),
+    uploaded.image_url,
+  );
+
+  await page.goto("/shop");
+  await expectRenderedImage(
+    page
+      .getByRole("link", { name: "View TEMP New Arrival", exact: true })
+      .locator("img"),
+    uploaded.image_url,
+  );
+  await page.goto("/product/temp-piece-1");
+  await expectRenderedImage(
+    page.locator(".gallery-image-frame img"),
+    uploaded.image_url,
+  );
+
+  await page.goto(`/admin/products/${productId}/edit`);
+  const additions = await Promise.all([
+    imageFile("second.png", "#6c3048"),
+    imageFile("third.png", "#a88135"),
+  ]);
+  const addInput = page
+    .locator(".admin-image-editor")
+    .last()
+    .getByLabel("Add product images", { exact: true });
+  await expect(addInput).toBeEnabled();
+  await addInput.setInputFiles(additions);
+  await expect(page.locator(".admin-selected-image")).toHaveCount(2);
+  const uploadSelected = page.getByRole("button", {
+    name: "UPLOAD SELECTED IMAGES",
+    exact: true,
+  });
+  await expect(uploadSelected).toBeEnabled();
+  await uploadSelected.click();
+  await expect(
+    page.getByText("2 images uploaded.", { exact: true }),
+  ).toBeVisible();
+
+  state = await (await request.get(control)).json();
+  product = state.products.find(
+    (item: { id: string }) => item.id === productId,
+  );
+  expect(product.images).toHaveLength(3);
+  expect(
+    product.images.map((image: { sort_order: number }) => image.sort_order),
+  ).toEqual([0, 1, 2]);
+  expect(
+    product.images.map((image: { is_primary: boolean }) => image.is_primary),
+  ).toEqual([true, false, false]);
+  const editImages = await page.locator(".admin-image-preview img").all();
+  expect(
+    await Promise.all(editImages.map((image) => renderedImageSource(image))),
+  ).toEqual(
+    product.images.map((image: { image_url: string }) => image.image_url),
+  );
+
+  await page.goto("/shop");
+  expect(
+    await renderedImageSource(
+      page
+        .getByRole("link", { name: "View TEMP New Arrival", exact: true })
+        .locator("img"),
+    ),
+  ).toBe(product.images[0].image_url);
+  await page.goto("/product/temp-piece-1");
+  for (const [index, image] of product.images.entries()) {
+    if (index)
+      await page
+        .getByRole("button", { name: `Show view ${index + 1}`, exact: true })
+        .click();
+    await expectRenderedImage(
+      page.locator(".gallery-image-frame img"),
+      image.image_url,
+    );
+  }
+});
+
 test("admin creates a product with more than three ordered images and preserves them on text edits", async ({
   page,
   request,
@@ -146,6 +279,36 @@ test("storage and image-record failures are categorized and uploaded orphans are
     page.locator(".admin-image-editor").last().getByRole("alert"),
   ).toContainText("Could not save image record");
   const state = await (await request.get(control)).json();
+  expect(state.storage).toEqual([]);
+});
+
+test("new product and uploaded file are rolled back when its image record fails", async ({
+  page,
+  request,
+}) => {
+  await login(page);
+  await request.post(control, { data: { imageRecordFailure: true } });
+  await page.goto("/admin/products/new");
+  await page.getByLabel("Product name").fill("Rollback Test Jacket");
+  await page
+    .getByLabel("Category", { exact: false })
+    .selectOption({ label: "Jackets" });
+  await page.getByLabel("Price (PHP)").fill("2450");
+  await page
+    .getByLabel("Add product images", { exact: true })
+    .setInputFiles(await imageFile("rollback.png", "#532c65"));
+  await expect(page.locator(".admin-selected-image")).toHaveCount(1);
+  await page.getByRole("button", { name: "SAVE PRODUCT" }).click();
+  await expect(page.locator(".admin-form > .admin-error")).toContainText(
+    "incomplete product was rolled back",
+  );
+
+  const state = await (await request.get(control)).json();
+  expect(
+    state.products.some(
+      (product: { slug: string }) => product.slug === "rollback-test-jacket",
+    ),
+  ).toBe(false);
   expect(state.storage).toEqual([]);
 });
 

@@ -45,6 +45,8 @@ try {
     "005_submission_security.sql",
     "006_loops_subscriptions.sql",
     "007_product_image_workflow.sql",
+    "008_product_image_public_read.sql",
+    "009_restore_product_image_rpcs.sql",
   ];
   for (let pass = 0; pass < 2; pass++)
     for (const name of migrations) {
@@ -284,6 +286,16 @@ try {
   );
   equal((await rpc("dashboard")).eligible, 0, "legacy consent is not invented");
   await role("anon");
+  equal(
+    (
+      await db.query(
+        "select count(*)::int as n from public.product_images where product_id=$1",
+        [product],
+      )
+    ).rows[0].n,
+    11,
+    "public storefront can read product images",
+  );
   await db.query(
     "insert into public.newsletter_subscribers(email,is_active) values('NEW@example.invalid',true)",
   );
@@ -489,7 +501,7 @@ try {
   ).rows;
   equal(unprotected, [], "every application table has RLS");
   console.log(
-    `Database verification passed: ${checks} assertions; migrations 002-007 replayed twice; no live services.`,
+    `Database verification passed: ${checks} assertions; migrations 002-009 replayed twice; no live services.`,
   );
 } catch (error) {
   console.error("Database verification failed:", {

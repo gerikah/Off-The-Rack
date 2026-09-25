@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const storageOrigin = storageUrl ? new URL(storageUrl).origin : "";
 const isDev = process.env.NODE_ENV === "development";
+const allowLoopbackStorageImages =
+  isDev &&
+  !!storageUrl &&
+  ["127.0.0.1", "localhost", "::1"].includes(new URL(storageUrl).hostname);
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
@@ -21,6 +25,7 @@ const nextConfig: NextConfig = {
   experimental: { serverActions: { bodySizeLimit: "40mb" } },
   images: {
     formats: ["image/webp"],
+    dangerouslyAllowLocalIP: allowLoopbackStorageImages,
     remotePatterns: storageUrl
       ? [new URL("/storage/v1/object/public/product-images/**", storageUrl)]
       : [],

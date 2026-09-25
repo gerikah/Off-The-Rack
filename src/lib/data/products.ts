@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getSupabase } from "../supabase";
 import type { Product, ProductStatus } from "../types";
+import { selectPrimaryImage } from "../product-utils";
 import { logDataError } from "./errors";
 const selection =
   "id,name,slug,short_description,description,price,category_id,size,condition,material,color,measurements,care_instructions,status,featured,bestseller,created_at,updated_at,category:categories(id,name,slug,description,created_at,updated_at),images:product_images(id,product_id,image_url,storage_path,alt_text,sort_order,is_primary,created_at)";
@@ -40,12 +41,27 @@ async function queryProducts(filters: Filters = {}): Promise<Product[]> {
       logDataError("read products", error);
       throw new Error("The collection is temporarily unavailable.");
     }
-    products.push(
-      ...(data ?? []).map((product) => ({
-        ...product,
-        images: [...product.images].sort((a, b) => a.sort_order - b.sort_order),
-      })),
-    );
+    const page = (data ?? []).map((product) => ({
+      ...product,
+      images: [...product.images].sort((a, b) => a.sort_order - b.sort_order),
+    }));
+    products.push(...page);
+    if (process.env.NODE_ENV !== "production") {
+      for (const product of page) {
+        const selected = selectPrimaryImage(product.images);
+        console.info("[product-images] product_image_read", {
+          productId: product.id,
+          imageCount: product.images.length,
+          primaryCount: product.images.filter((image) => image.is_primary)
+            .length,
+          selectedImageSource: selected
+            ? selected.storage_path
+              ? "storage_path"
+              : "image_url"
+            : "fallback",
+        });
+      }
+    }
     if (!data || data.length < size || products.length === filters.limit) break;
   }
   return products;

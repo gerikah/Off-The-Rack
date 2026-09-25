@@ -3,6 +3,7 @@ import {
   getGalleryImages,
   getPrimaryImage,
   productImageUrl,
+  selectPrimaryImage,
   PRODUCT_IMAGE_FALLBACK,
 } from "../src/lib/product-utils";
 import type { ProductImage } from "../src/lib/types";
@@ -66,12 +67,22 @@ test("gallery ordering follows sort order while cards prefer the primary image",
   expect(input.map((i) => i.id)).toEqual(["last", "first", "middle"]);
   expect(getGalleryImages([])).toEqual([]);
 });
-test("missing and untrusted image URLs use the existing fallback", () => {
+test("only a missing image uses fallback; rejected URLs are not substituted", () => {
   expect(productImageUrl(null)).toBe(PRODUCT_IMAGE_FALLBACK);
-  expect(productImageUrl("javascript:alert(1)")).toBe(PRODUCT_IMAGE_FALLBACK);
-  expect(productImageUrl("https://unapproved.example/product.jpg")).toBe(
+  expect(productImageUrl("javascript:alert(1)")).not.toBe(
     PRODUCT_IMAGE_FALLBACK,
   );
-  expect(productImageUrl("/images/../secret")).toBe(PRODUCT_IMAGE_FALLBACK);
+  expect(productImageUrl("https://unapproved.example/product.jpg")).toBe(
+    "https://unapproved.example/product.jpg",
+  );
+  expect(productImageUrl("/images/../secret")).not.toBe(PRODUCT_IMAGE_FALLBACK);
   expect(productImageUrl("/images/7.webp")).toBe("/images/7.webp");
+});
+
+test("one uploaded image is selected exactly as the product cover", () => {
+  const uploaded = {
+    ...image("uploaded", 0, true),
+    image_url: "uploaded-url",
+  };
+  expect(selectPrimaryImage([uploaded])?.image_url).toBe("uploaded-url");
 });

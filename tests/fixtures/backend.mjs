@@ -163,8 +163,10 @@ function filterRows(rows, url) {
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://127.0.0.1:4318");
-    let text = "";
-    for await (const chunk of req) text += chunk;
+    const chunks = [];
+    for await (const chunk of req) chunks.push(Buffer.from(chunk));
+    const requestBytes = Buffer.concat(chunks);
+    const text = requestBytes.toString("utf8");
     const body =
       text && req.headers["content-type"]?.includes("application/json")
         ? JSON.parse(text)
@@ -250,6 +252,26 @@ createServer(async (req, res) => {
       return send(res, 204);
     }
     if (url.pathname.startsWith("/storage/v1/object/")) {
+      if (
+        req.method === "GET" &&
+        url.pathname.startsWith(
+          "/storage/v1/object/public/product-images/",
+        )
+      ) {
+        const publicPath = url.pathname.replace(
+          "/storage/v1/object/public/product-images/",
+          "",
+        );
+        const stored = storageObjects.get(publicPath);
+        if (!stored) return send(res, 404, { message: "not found" });
+        res.writeHead(200, {
+          "content-type": "image/webp",
+          "content-length": stored.length,
+          "cache-control": "public, max-age=31536000",
+        });
+        res.end(stored);
+        return;
+      }
       if (!admin) return send(res, 403, { message: "denied" });
       const objectPath = url.pathname.replace(
         "/storage/v1/object/product-images/",
@@ -262,7 +284,7 @@ createServer(async (req, res) => {
             error: "Storage failure",
             message: "fixture storage failure",
           });
-        storageObjects.set(objectPath, true);
+        storageObjects.set(objectPath, requestBytes);
         writes.push({
           table: "storage",
           method: "POST",

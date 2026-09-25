@@ -21,7 +21,7 @@ export function ProductGallery({
   const source = images.length
     ? getGalleryImages(images).map((image) => ({
         id: image.id,
-        src: productImageUrl(image.image_url),
+        src: productImageUrl(image.image_url, image.storage_path),
         alt: image.alt_text?.trim() || alt,
       }))
     : [{ id: "fallback", src: PRODUCT_IMAGE_FALLBACK, alt }];

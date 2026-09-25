@@ -28,13 +28,20 @@ type ImageFailure = {
   statusCode?: string | number;
   status?: string | number;
   message?: string;
+  details?: string;
+  hint?: string;
 };
+
+function safeDiagnosticText(value?: string) {
+  return value?.replace(/\s+/g, " ").trim().slice(0, 500) || undefined;
+}
 
 function logImageFailure(
   operation: string,
   error: ImageFailure,
   productId: string,
   storagePath?: string,
+  responseStatus?: number,
 ) {
   if (process.env.NODE_ENV !== "production") {
     console.error("[product-images] operation failed", {
@@ -43,7 +50,30 @@ function logImageFailure(
       storagePath,
       productId,
       code: error.code || "storage_error",
-      status: error.statusCode || error.status,
+      status: responseStatus || error.statusCode || error.status,
+      message: safeDiagnosticText(error.message),
+      details: safeDiagnosticText(error.details),
+      hint: safeDiagnosticText(error.hint),
+    });
+  }
+}
+
+function logImageSuccess(
+  productId: string,
+  storagePath: string,
+  publicUrlPresent: boolean,
+  dbInsertSuccess: boolean,
+  image?: Pick<ProductImage, "sort_order" | "is_primary">,
+) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[product-images] product_image_upload", {
+      bucket: PRODUCT_IMAGE_BUCKET,
+      productId,
+      storagePath,
+      publicUrlPresent,
+      dbInsertSuccess,
+      sortOrder: image?.sort_order,
+      isPrimary: image?.is_primary,
     });
   }
 }
@@ -164,7 +194,7 @@ async function gallery(
 }
 
 export async function saveProductImage(form: FormData) {
-  const { client } = await requireAdmin();
+  const { client, user } = await requireAdmin();
   const details = imageDetails.parse({
     product_id: form.get("product_id"),
     image_id: form.get("image_id") || "",
@@ -181,6 +211,9 @@ export async function saveProductImage(form: FormData) {
   const previous = details.image_id
     ? await currentImage(client, details.product_id, details.image_id)
     : null;
+  const existingImages = previous
+    ? []
+    : await gallery(client, details.product_id);
   let upload: { storage_path: string; image_url: string } | undefined;
   const file = form.get("image");
   if (file instanceof File && file.size) {
@@ -206,13 +239,55 @@ export async function saveProductImage(form: FormData) {
       logImageFailure("upload", error, details.product_id, path);
       throw new AdminError(uploadMessage(error));
     }
-    upload = {
-      storage_path: path,
-      image_url: client.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path)
-        .data.publicUrl,
-    };
+    const publicUrl = client.storage
+      .from(PRODUCT_IMAGE_BUCKET)
+      .getPublicUrl(path).data.publicUrl;
+    if (!publicUrl?.trim()) {
+      await cleanupImageFiles(client, [path]);
+      throw new AdminError(
+        "Could not create the public image URL. The uploaded file was rolled back.",
+      );
+    }
+    upload = { storage_path: path, image_url: publicUrl };
   } else if (!previous) {
     throw new AdminError("Choose an image to upload.");
+  }
+  const [currentUser, membership] = await Promise.all([
+    client.auth.getUser(),
+    client.rpc("otr_is_admin"),
+  ]);
+  const authenticated = !currentUser.error && !!currentUser.data.user && !!user;
+  const adminVerified = !membership.error && membership.data === true;
+  const expectedSortOrder = previous
+    ? previous.sort_order
+    : existingImages.reduce(
+        (maximum, image) => Math.max(maximum, image.sort_order),
+        -1,
+      ) + 1;
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[product-images] product_image_write_attempt", {
+      productId: details.product_id,
+      productExists: !!product.data,
+      productIdMatches: product.data?.id === details.product_id,
+      currentUserExists: authenticated,
+      authRole: authenticated ? "authenticated" : "anonymous",
+      adminVerified,
+      sameClientForStorageAndDatabase: true,
+      insertShape: {
+        product_id: details.product_id,
+        image_url: upload?.image_url ? "present" : "null",
+        storage_path: upload?.storage_path ? "present" : "null",
+        alt_text: details.alt_text ? "present" : "null",
+        sort_order: expectedSortOrder,
+        is_primary: previous
+          ? previous.is_primary
+          : existingImages.length === 0,
+      },
+    });
+  }
+  if (!authenticated || !adminVerified) {
+    if (upload) await cleanupImageFiles(client, [upload.storage_path]);
+    throw new AdminError("Your admin session expired. Sign in and try again.");
   }
   const saved = await client.rpc("otr_save_product_image", {
     product_uuid: details.product_id,
@@ -232,6 +307,7 @@ export async function saveProductImage(form: FormData) {
       saved.error,
       details.product_id,
       upload?.storage_path,
+      saved.status,
     );
     if (saved.error.code === "23514")
       throw new AdminError(
@@ -249,7 +325,20 @@ export async function saveProductImage(form: FormData) {
     upload && previous
       ? await cleanupProductImageFiles(client, [previous.storage_path])
       : false;
-  return { images: await gallery(client, details.product_id), pendingCleanup };
+  const images = await gallery(client, details.product_id);
+  if (upload) {
+    const persisted = images.find(
+      (image) => image.storage_path === upload.storage_path,
+    );
+    logImageSuccess(
+      details.product_id,
+      upload.storage_path,
+      !!upload.image_url,
+      !!persisted,
+      persisted,
+    );
+  }
+  return { images, pendingCleanup };
 }
 
 export async function removeProductImage(form: FormData) {

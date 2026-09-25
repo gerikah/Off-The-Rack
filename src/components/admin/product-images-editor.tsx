@@ -292,7 +292,7 @@ function ImageEditor({ productId, image, locked, onBusy, onSaved }: EditProps) {
           />
         ) : image ? (
           <ProductImageView
-            src={productImageUrl(image.image_url)}
+            src={productImageUrl(image.image_url, image.storage_path)}
             alt={image.alt_text || "Current product image"}
             width={480}
             height={480}
