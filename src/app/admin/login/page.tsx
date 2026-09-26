@@ -10,7 +10,7 @@ export default async function AdminLogin() {
     <div className="admin-login">
       <div className="admin-login-brand">
         <Image
-          src="/images/star-off-the-rack-logo-favicon.png"
+          src="/images/star-off-the-rack-logo-favicon.webp"
           width={124}
           height={98}
           alt="Off The Rack"

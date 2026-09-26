@@ -2744,7 +2744,6 @@ textarea:focus-visible {
 
 /* Brand refresh: one navbar emblem, textured editorial pages, silver shop surface. */
 :root {
-  /* assets/gradient - css.txt is empty; replace this fallback with the supplied gradient when available. */
   --shop-gradient: linear-gradient(
     125deg,
     #f2f2ef 0%,
