@@ -3,7 +3,7 @@ import { StructuredData } from "@/components/structured-data";
 import { brand } from "@/lib/brand";
 import Image from "next/image";
 import Link from "next/link";
-import { getNewArrivals, getBestsellers } from "@/lib/data/products";
+import { getNewArrivals, getFeaturedProducts } from "@/lib/data/products";
 import { Arrow, Button, Marquee, SectionHeading } from "@/components/ui";
 import { ProductCard } from "@/components/product-card";
 
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [arrivals, featuredWorks] = await Promise.all([
     getNewArrivals(3),
-    getBestsellers(5),
+    getFeaturedProducts(4),
   ]);
   return (
     <>
@@ -198,7 +198,7 @@ export default async function HomePage() {
           </div>
           {!featuredWorks.length && (
             <div className="empty-state">
-              <p>No bestseller products yet.</p>
+              <p>No featured products yet.</p>
             </div>
           )}
           {featuredWorks.map((product, i) => (

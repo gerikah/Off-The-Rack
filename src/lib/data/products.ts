@@ -9,6 +9,7 @@ const selection =
 type Filters = {
   statuses?: ProductStatus[];
   bestseller?: boolean;
+  featured?: boolean;
   slug?: string;
   categoryId?: string;
   excludeId?: string;
@@ -21,14 +22,17 @@ async function queryProducts(filters: Filters = {}): Promise<Product[]> {
   // Page through PostgREST's row limit so Shop sees the full catalog.
   const pageSize = 500;
   for (let offset = 0; ; offset += pageSize) {
+    const orderBy = filters.featured ? "updated_at" : "created_at";
     let query = client
       .from("products")
       .select(selection)
-      .order("created_at", { ascending: false })
+      .order(orderBy, { ascending: false })
       .order("id")
       .order("sort_order", { referencedTable: "images", ascending: true });
     if (filters.statuses) query = query.in("status", filters.statuses);
     if (filters.bestseller) query = query.eq("bestseller", true);
+    if (filters.featured !== undefined)
+      query = query.eq("featured", filters.featured);
     if (filters.slug) query = query.eq("slug", filters.slug);
     if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
     if (filters.excludeId) query = query.neq("id", filters.excludeId);
@@ -75,6 +79,9 @@ export const getNewArrivals = cache((limit = 3) =>
 );
 export const getBestsellers = cache((limit = 5) =>
   queryProducts({ statuses: ["available", "sold"], bestseller: true, limit }),
+);
+export const getFeaturedProducts = cache((limit = 4) =>
+  queryProducts({ statuses: ["available", "sold"], featured: true, limit }),
 );
 export const getArchivedProducts = cache(() =>
   queryProducts({ statuses: ["sold", "archived"] }),

@@ -38,7 +38,7 @@ test("empty catalog retains page composition and custom CTA", async ({
   await request.post(control, { data: { scenario: "empty" } });
   await page.goto("/");
   await expect(page.getByText("NEW PIECES COMING SOON.")).toBeVisible();
-  await expect(page.getByText("No bestseller products yet.")).toBeVisible();
+  await expect(page.getByText("No featured products yet.")).toBeVisible();
   await expect(page.locator(".custom-tile")).toHaveAttribute(
     "href",
     "/inquiry?type=custom",
@@ -58,8 +58,9 @@ test("empty catalog retains page composition and custom CTA", async ({
     /noindex/,
   );
 });
-test("arrivals, bestsellers and archive use their database predicates", async ({
+test("arrivals, featured works and archive use their database predicates", async ({
   page,
+  request,
 }) => {
   await page.goto("/");
   await expect(page.locator(".arrival-products .product-card")).toHaveCount(2);
@@ -68,9 +69,24 @@ test("arrivals, bestsellers and archive use their database predicates", async ({
   ).toContainText("TEMP New Arrival");
   await expect(page.locator(".featured-grid .product-card")).toHaveCount(2);
   await expect(page.locator(".featured-grid")).toContainText("TEMP Sold");
+  await expect(page.locator(".featured-grid")).toContainText(
+    "TEMP New Arrival",
+  );
+  await expect(page.locator(".featured-grid")).not.toContainText(
+    "TEMP Bestseller",
+  );
   await expect(page.locator(".featured-grid")).not.toContainText(
     "TEMP Archived",
   );
+  const state = await (await request.get(control)).json();
+  const featuredQuery = state.queries.find(
+    ({ table, search }: { table: string; search: string }) =>
+      table === "products" &&
+      new URLSearchParams(search).get("featured") === "eq.true",
+  );
+  expect(
+    featuredQuery && new URLSearchParams(featuredQuery.search).get("limit"),
+  ).toBe("4");
   await page.goto("/archive");
   await expect(page.locator(".product-card")).toHaveCount(2);
   await expect(page.locator(".product-card").first()).toContainText(
@@ -137,6 +153,28 @@ test("gallery order, optional metadata, related pieces and product association",
   request,
 }) => {
   await page.goto("/product/temp-piece-0");
+  const galleryColumn = page.locator(".product-detail-gallery-column");
+  const relatedSection = page.locator(".product-related-section");
+  await expect(galleryColumn.locator(".product-gallery")).toBeVisible();
+  await expect(galleryColumn.locator(".product-related-section")).toBeVisible();
+  expect(
+    await relatedSection
+      .locator(".product-grid")
+      .evaluate(
+        (grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+      ),
+  ).toBe(3);
+  expect(
+    await relatedSection.locator(".product-card").count(),
+  ).toBeLessThanOrEqual(3);
+  await expect
+    .poll(() =>
+      relatedSection.evaluate((section) => {
+        const column = section.closest(".product-detail-gallery-column");
+        return column?.contains(section) ?? false;
+      }),
+    )
+    .toBe(true);
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
     /Fixture view 0/,
@@ -149,6 +187,26 @@ test("gallery order, optional metadata, related pieces and product association",
   await expect(page.locator(".related-section")).not.toContainText(
     "TEMP Bestseller",
   );
+  await page.setViewportSize({ width: 375, height: 812 });
+  const mobileOrder = await page
+    .locator(".product-detail")
+    .evaluate((detail) => {
+      const top = (selector: string) =>
+        detail.querySelector(selector)?.getBoundingClientRect().top ?? Infinity;
+      return {
+        gallery: top(".product-gallery"),
+        info: top(".product-detail-info"),
+        related: top(".product-related-section"),
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: document.documentElement.clientWidth,
+      };
+    });
+  expect(mobileOrder.gallery).toBeLessThan(mobileOrder.info);
+  expect(mobileOrder.info).toBeLessThan(mobileOrder.related);
+  expect(mobileOrder.documentWidth).toBeLessThanOrEqual(
+    mobileOrder.viewportWidth,
+  );
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("link", { name: "Inquire about this piece" }).click();
   await expect(page.locator(".selected-product")).toContainText(
     "TEMP Bestseller",

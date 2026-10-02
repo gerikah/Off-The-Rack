@@ -4192,3 +4192,98 @@ textarea:focus-visible {
     font-size: 16px;
   }
 }
+
+.product-detail-gallery-column {
+  min-width: 0;
+}
+.product-detail-info > h1 {
+  font-size: clamp(42px, 4.3vw, 68px);
+  margin: 8px 0 10px;
+}
+.detail-price {
+  font-size: 20px;
+  margin: 12px 0;
+}
+.piece-specs {
+  padding-block: 10px;
+}
+.product-description {
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.detail-note {
+  margin: 8px 0 16px;
+}
+.detail-accordions summary {
+  min-height: 44px;
+  padding-block: 12px;
+}
+.detail-accordions details > p {
+  padding-bottom: 12px;
+}
+.product-detail-gallery-column > .product-related-section {
+  margin: 30px 0 0;
+  padding-bottom: 24px;
+}
+.product-related-section .section-heading {
+  margin-bottom: 12px;
+}
+.product-related-section h2 {
+  font-size: clamp(24px, 2.2vw, 32px);
+  line-height: 1.05;
+  margin-bottom: 18px;
+}
+.product-related-section .product-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 12px;
+}
+.product-related-section .product-info {
+  padding-top: 8px;
+}
+.product-related-section .product-title-row h3 {
+  font-size: 9px;
+}
+.product-related-section .product-title-row > span {
+  font-size: 9px;
+}
+
+@media (max-width: 767px) {
+  .product-detail {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "gallery"
+      "info"
+      "related";
+  }
+  .product-detail-gallery-column {
+    display: contents;
+  }
+  .product-detail-gallery-column > .product-gallery {
+    grid-area: gallery;
+  }
+  .product-detail > .product-detail-info {
+    grid-area: info;
+  }
+  .product-detail-gallery-column > .product-related-section {
+    grid-area: related;
+    margin-top: 0;
+  }
+  .product-detail-info > h1 {
+    font-size: clamp(42px, 12vw, 60px);
+    margin: 8px 0 10px;
+  }
+  .product-related-section h2 {
+    font-size: 25px;
+    margin-bottom: 14px;
+  }
+  .product-related-section .product-grid {
+    gap: 18px 8px;
+  }
+  .product-related-section .product-title-row h3,
+  .product-related-section .product-title-row > span {
+    font-size: 8px;
+  }
+  .product-related-section .product-title-row {
+    gap: 4px;
+  }
+}

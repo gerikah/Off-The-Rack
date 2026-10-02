@@ -36,7 +36,7 @@ const products = [
   measurements: i === 1 ? null : "Chest: 54 cm",
   care_instructions: i === 1 ? null : "Hand wash cold.",
   status: ["available", "available", "sold", "archived"][i],
-  featured: false,
+  featured: i === 1 || i === 2,
   bestseller: i === 0 || i === 2,
   created_at: "2026-09-0" + (i + 1) + "T00:00:00Z",
   updated_at: timestamp,
@@ -142,6 +142,7 @@ function filterRows(rows, url) {
   for (const key of [
     "status",
     "bestseller",
+    "featured",
     "slug",
     "category_id",
     "id",
@@ -254,9 +255,7 @@ createServer(async (req, res) => {
     if (url.pathname.startsWith("/storage/v1/object/")) {
       if (
         req.method === "GET" &&
-        url.pathname.startsWith(
-          "/storage/v1/object/public/product-images/",
-        )
+        url.pathname.startsWith("/storage/v1/object/public/product-images/")
       ) {
         const publicPath = url.pathname.replace(
           "/storage/v1/object/public/product-images/",

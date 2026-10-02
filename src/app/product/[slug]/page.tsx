@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const product = await getProductBySlug((await params).slug);
   if (!product) notFound();
-  const related = await getRelatedProducts(product);
+  const related = await getRelatedProducts(product, 3);
   return (
     <div className="section-wrap product-page">
       <StructuredData
@@ -90,7 +90,16 @@ export default async function ProductPage({ params }: Props) {
         <span>{product.name}</span>
       </nav>
       <div className="product-detail">
-        <ProductGallery images={product.images} alt={product.name} />
+        <div className="product-detail-gallery-column">
+          <ProductGallery images={product.images} alt={product.name} />
+          {related.length > 0 && (
+            <section className="related-section product-related-section">
+              <SectionHeading index="↗" label="KEEP EXPLORING" />
+              <h2 className="display">YOU MAY ALSO LIKE.</h2>
+              <ProductGrid products={related} />
+            </section>
+          )}
+        </div>
         <div className="product-detail-info">
           <span className="eyebrow">
             {product.category?.name.toUpperCase()}
@@ -205,13 +214,6 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
       </div>
-      {related.length > 0 && (
-        <section className="related-section">
-          <SectionHeading index="↗" label="KEEP EXPLORING" />
-          <h2 className="display">YOU MAY ALSO LIKE.</h2>
-          <ProductGrid products={related} />
-        </section>
-      )}
     </div>
   );
 }
