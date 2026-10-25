@@ -23,10 +23,12 @@ export function SaveProductButton({
   id,
   name,
   compact = false,
+  iconOnly = false,
 }: {
   id: string;
   name: string;
   compact?: boolean;
+  iconOnly?: boolean;
 }) {
   const { savedIds, toggleSaved } = useSavedProducts();
   const saved = savedIds.includes(id);
@@ -51,7 +53,9 @@ export function SaveProductButton({
         }}
       >
         <BookmarkIcon />
-        {!compact && <span>{saved ? "Saved piece" : "Save piece"}</span>}
+        {!compact && !iconOnly && (
+          <span>{saved ? "Saved piece" : "Save piece"}</span>
+        )}
       </button>
       <span className="sr-only" role="status">
         {message}
@@ -64,10 +68,14 @@ export function ProductActions({
   id,
   name,
   slug,
+  buyHref,
+  unavailableLabel = "Unavailable",
 }: {
   id: string;
   name: string;
   slug: string;
+  buyHref?: string;
+  unavailableLabel?: string;
 }) {
   const [message, setMessage] = useState("");
   const [manualUrl, setManualUrl] = useState("");
@@ -108,14 +116,29 @@ export function ProductActions({
       <div
         className="product-actions"
         role="group"
-        aria-label="Save or share this piece"
+        aria-label="Buy, save or share this piece"
       >
-        <SaveProductButton id={id} name={name} />
+        {buyHref ? (
+          <a
+            href={buyHref}
+            className="product-buy"
+            title="Email the shop to buy this piece"
+          >
+            Buy this piece <span aria-hidden="true">↗</span>
+          </a>
+        ) : (
+          <button type="button" className="product-buy" disabled>
+            {unavailableLabel}
+          </button>
+        )}
+        <SaveProductButton id={id} name={name} iconOnly />
         <button
           type="button"
           className="product-action"
           disabled={busy}
           onClick={share}
+          aria-label={busy ? "Sharing…" : "Share piece"}
+          title="Share this piece"
         >
           <svg
             width="18"
@@ -128,7 +151,6 @@ export function ProductActions({
           >
             <path d="M12 16V3m-5 5 5-5 5 5M5 12v8h14v-8" />
           </svg>
-          {busy ? "Sharing…" : "Share piece"}
         </button>
       </div>
       <p className="product-action-feedback" role="status">

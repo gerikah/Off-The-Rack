@@ -1,5 +1,6 @@
 ﻿"use client";
 import { ProductImageView } from "./product-image";
+import Link from "next/link";
 import type { ProductImage } from "@/lib/types";
 import {
   getGalleryImages,
@@ -65,9 +66,17 @@ export function ProductGallery({
             fill
             preload={current === 0}
             loading={current === 0 ? undefined : "eager"}
-            sizes="(max-width: 767px) 100vw, 60vw"
+            sizes="(max-width: 767px) 100vw, (max-width: 1440px) 54vw, 650px"
           />
         </div>
+        <Link
+          className="gallery-back"
+          href="/shop"
+          aria-label="Back to collection"
+        >
+          <Arrow className="arrow-back" />
+          <span>Back</span>
+        </Link>
         <span className="gallery-counter" aria-hidden="true">
           {String(current + 1).padStart(2, "0")} /{" "}
           {String(source.length).padStart(2, "0")}
@@ -121,15 +130,12 @@ export function ProductGallery({
                 src={image.src}
                 alt={`Thumbnail of view ${i + 1}`}
                 fill
-                sizes="120px"
+                sizes="(max-width: 767px) 25vw, 160px"
               />
             </button>
           ))}
         </div>
       )}
-      <p className="gallery-note eyebrow">
-        HAND-PAINTED DETAILS. NO TWO PIECES ALIKE.
-      </p>
     </div>
   );
 }

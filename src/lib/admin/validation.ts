@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PRODUCT_TEXT_LIMITS } from "../product-limits";
 export type ActionState = {
   error?: string;
   fields?: Record<string, string>;
@@ -25,12 +26,19 @@ const text = (max: number) =>
   z
     .string()
     .trim()
-    .max(max)
+    .max(max, `Use ${max} characters or fewer.`)
     .optional()
     .default("")
     .transform((value) => value || null);
 export const productSchema = z.object({
-  name: z.string().trim().min(2, "Enter a product name.").max(160),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Enter a product name.")
+    .max(
+      PRODUCT_TEXT_LIMITS.name,
+      `Use ${PRODUCT_TEXT_LIMITS.name} characters or fewer.`,
+    ),
   slug,
   category_id: z.uuid("Choose a category."),
   price: z
@@ -43,14 +51,14 @@ export const productSchema = z.object({
     )
     .transform(Number)
     .refine(Number.isFinite, "Enter a valid price."),
-  short_description: text(500),
-  description: text(10000),
-  size: text(80),
-  condition: text(160),
+  short_description: text(PRODUCT_TEXT_LIMITS.short_description),
+  description: text(PRODUCT_TEXT_LIMITS.description),
+  size: text(PRODUCT_TEXT_LIMITS.size),
+  condition: text(PRODUCT_TEXT_LIMITS.condition),
   material: text(160),
   color: text(160),
   measurements: text(4000),
-  care_instructions: text(4000),
+  care_instructions: text(PRODUCT_TEXT_LIMITS.care_instructions),
   status: z.enum(["available", "sold", "archived"]),
   featured: z.boolean().default(false),
   bestseller: z.boolean().default(false),

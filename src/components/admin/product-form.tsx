@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import type { Category, ProductRow, ProductImage } from "@/lib/types";
 import { saveProductAction } from "@/app/admin/actions";
 import { slugify } from "@/lib/admin/validation";
+import { PRODUCT_TEXT_LIMITS } from "@/lib/product-limits";
 import { NewProductImages, ProductImagesEditor } from "./product-images-editor";
 export function ProductForm({
   product,
@@ -51,7 +52,11 @@ export function ProductForm({
       max?: number;
     } = {},
   ) {
-    const error = state.fields?.[name];
+    const limit = PRODUCT_TEXT_LIMITS[name as keyof typeof PRODUCT_TEXT_LIMITS];
+    const error =
+      limit && values[name].length > limit
+        ? `Use ${limit} characters or fewer before saving.`
+        : state.fields?.[name];
     const props = {
       id: "product-" + name,
       name,
@@ -60,9 +65,12 @@ export function ProductForm({
         event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
       ) => change(name, event.target.value),
       required: options.required,
-      maxLength: options.max || 4000,
+      maxLength: limit || options.max || 4000,
       "aria-invalid": !!error,
-      "aria-describedby": error ? name + "-error" : undefined,
+      "aria-describedby":
+        [limit ? name + "-count" : "", error ? name + "-error" : ""]
+          .filter(Boolean)
+          .join(" ") || undefined,
     };
     return (
       <label htmlFor={props.id}>
@@ -78,6 +86,11 @@ export function ProductForm({
             step={options.type === "number" ? "0.01" : undefined}
           />
         )}{" "}
+        {limit && (
+          <span id={name + "-count"} className="admin-help">
+            {values[name].length} / {limit} characters
+          </span>
+        )}
         {error && (
           <span id={name + "-error"} className="admin-field-error">
             {error}
@@ -100,7 +113,7 @@ export function ProductForm({
             <section className="admin-panel">
               <h2>Basic information</h2>
               <div className="admin-fields-grid">
-                {field("name", "Product name", { required: true, max: 160 })}
+                {field("name", "Product name", { required: true })}
                 {field("slug", "Slug", { required: true, max: 160 })}
                 <label htmlFor="product-category">
                   Category *
@@ -140,14 +153,18 @@ export function ProductForm({
                   a product.
                 </p>
               )}
-              {field("short_description", "Short description", { max: 500 })}
-              {field("description", "Description", { long: true, max: 10000 })}
+              {field("short_description", "Short description")}
+              {field("description", "Description", { long: true })}
+              <p className="admin-help">
+                Description appears beside the product images. Short description
+                is used as a fallback when Description is empty.
+              </p>
             </section>
             <section className="admin-panel">
               <h2>Product details</h2>
               <div className="admin-fields-grid">
-                {field("size", "Size", { max: 80 })}
-                {field("condition", "Condition", { max: 160 })}
+                {field("size", "Size")}
+                {field("condition", "Condition")}
                 {field("material", "Material", { max: 160 })}
                 {field("color", "Color", { max: 160 })}
               </div>

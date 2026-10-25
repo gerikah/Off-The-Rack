@@ -153,28 +153,8 @@ test("gallery order, optional metadata, related pieces and product association",
   request,
 }) => {
   await page.goto("/product/temp-piece-0");
-  const galleryColumn = page.locator(".product-detail-gallery-column");
-  const relatedSection = page.locator(".product-related-section");
-  await expect(galleryColumn.locator(".product-gallery")).toBeVisible();
-  await expect(galleryColumn.locator(".product-related-section")).toBeVisible();
-  expect(
-    await relatedSection
-      .locator(".product-grid")
-      .evaluate(
-        (grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length,
-      ),
-  ).toBe(3);
-  expect(
-    await relatedSection.locator(".product-card").count(),
-  ).toBeLessThanOrEqual(3);
-  await expect
-    .poll(() =>
-      relatedSection.evaluate((section) => {
-        const column = section.closest(".product-detail-gallery-column");
-        return column?.contains(section) ?? false;
-      }),
-    )
-    .toBe(true);
+  await expect(page.locator(".product-gallery")).toBeVisible();
+  await expect(page.locator(".product-related-section")).toHaveCount(0);
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
     /Fixture view 0/,
@@ -183,9 +163,6 @@ test("gallery order, optional metadata, related pieces and product association",
   await expect(page.locator(".gallery-primary img")).toHaveAttribute(
     "alt",
     /Fixture view 1/,
-  );
-  await expect(page.locator(".related-section")).not.toContainText(
-    "TEMP Bestseller",
   );
   await page.setViewportSize({ width: 375, height: 812 });
   const mobileOrder = await page
@@ -196,18 +173,21 @@ test("gallery order, optional metadata, related pieces and product association",
       return {
         gallery: top(".product-gallery"),
         info: top(".product-detail-info"),
-        related: top(".product-related-section"),
         documentWidth: document.documentElement.scrollWidth,
         viewportWidth: document.documentElement.clientWidth,
       };
     });
   expect(mobileOrder.gallery).toBeLessThan(mobileOrder.info);
-  expect(mobileOrder.info).toBeLessThan(mobileOrder.related);
   expect(mobileOrder.documentWidth).toBeLessThanOrEqual(
     mobileOrder.viewportWidth,
   );
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.getByRole("link", { name: "Inquire about this piece" }).click();
+  const buy = page.getByRole("link", { name: "Buy this piece" });
+  const email = new URL((await buy.getAttribute("href"))!);
+  expect(email.protocol).toBe("mailto:");
+  expect(email.searchParams.get("subject")).toContain("TEMP Bestseller");
+  expect(email.searchParams.get("body")).toContain("/product/temp-piece-0");
+  await page.goto("/inquiry?product=temp-piece-0");
   await expect(page.locator(".selected-product")).toContainText(
     "TEMP Bestseller",
   );
@@ -235,11 +215,11 @@ test("gallery order, optional metadata, related pieces and product association",
   ).toHaveCount(0);
   await page.goto("/product/temp-piece-2");
   await expect(
-    page.getByRole("link", { name: "View similar pieces" }),
+    page.getByRole("link", { name: "View similar products" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Inquire about this piece" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Buy this piece" })).toHaveCount(
+    0,
+  );
 });
 test("custom validation, saved fields, newsletter success and duplicate", async ({
   page,

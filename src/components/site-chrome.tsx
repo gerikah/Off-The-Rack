@@ -13,6 +13,13 @@ export function SiteChrome({
   // Presentation only. Admin authorization is enforced separately in the server data layer.
   if (pathname === "/admin" || pathname.startsWith("/admin/"))
     return <main id="main">{children}</main>;
+  if (pathname.startsWith("/product/"))
+    return (
+      <div className="product-screen">
+        {header}
+        <main id="main">{children}</main>
+      </div>
+    );
   return (
     <>
       {header}
