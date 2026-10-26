@@ -3883,6 +3883,11 @@ textarea:focus-visible {
 }
 .product-card-visual {
   position: relative;
+  border-radius: 15px;
+  box-shadow: 0 5px 16px rgb(10 10 10 / 12%);
+}
+.product-card-visual > .product-image-link {
+  border-radius: inherit;
 }
 .save-product,
 .product-action,
@@ -4073,6 +4078,78 @@ textarea:focus-visible {
 .product-open {
   min-width: 44px;
   min-height: 44px;
+}
+.product-open-label {
+  display: none;
+}
+@media (min-width: 768px) {
+  .shop-products {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+:is(.shop-products, .arrival-products, .featured-grid) .product-image-link {
+  border-radius: 15px;
+}
+:is(.shop-products, .arrival-products, .featured-grid) .product-image {
+  aspect-ratio: 1 / 1;
+}
+:is(.shop-products, .arrival-products, .featured-grid) .product-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  height: 44px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--off-white);
+  color: var(--black);
+  border: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+:is(.shop-products, .arrival-products, .featured-grid) .product-open-label {
+  display: inline;
+}
+:is(.shop-products, .arrival-products, .featured-grid) .product-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: end;
+  gap: 12px;
+}
+:is(.shop-products, .arrival-products, .featured-grid) .product-title-row h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.4;
+}
+:is(.shop-products, .arrival-products, .featured-grid)
+  .product-title-row
+  > span {
+  text-align: right;
+  font-size: 13px;
+  line-height: 1.4;
+}
+@media (max-width: 767px) {
+  :is(.shop-products, .arrival-products, .featured-grid) .product-title-row {
+    gap: 8px;
+  }
+  :is(.shop-products, .arrival-products, .featured-grid) .product-title-row h3,
+  :is(.shop-products, .arrival-products, .featured-grid)
+    .product-title-row
+    > span {
+    font-size: 11px;
+  }
+  :is(.shop-products, .arrival-products, .featured-grid) .product-open {
+    right: 8px;
+    bottom: 8px;
+    gap: 6px;
+    padding-inline: 10px;
+  }
+  :is(.shop-products, .arrival-products, .featured-grid) .compact-save {
+    left: 8px;
+    bottom: 8px;
+  }
 }
 .desktop-nav a,
 .status-filters button {
@@ -4529,5 +4606,14 @@ textarea:focus-visible {
   .product-page .product-similar-link {
     min-height: 32px;
     font-size: 13px;
+  }
+}
+
+@media (max-width: 767px) {
+  .arrival-products {
+    padding-top: 12px;
+    margin-top: -12px;
+    padding-left: 12px;
+    margin-left: -12px;
   }
 }

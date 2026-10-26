@@ -34,7 +34,7 @@ export function Footer() {
             ["Home", "/"],
             ["Shop", "/shop"],
             ["About", "/about"],
-            ["Contact", "/contact"],
+            ["Let’s talk", "/inquiry"],
             ["Admin", "/admin/login"],
           ].map(([label, href]) => (
             <Link href={href} key={href}>

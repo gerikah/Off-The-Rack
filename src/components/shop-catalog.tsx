@@ -227,7 +227,7 @@ export function ShopCatalog({
           <p>Check back for the next drop.</p>
         </div>
       ) : filtered.length ? (
-        <ProductGrid products={filtered} eager />
+        <ProductGrid products={filtered} className="shop-products" eager />
       ) : (
         <div className="empty-state">
           <span className="eyebrow">NOTHING ON THIS RACK. YET.</span>

@@ -9,7 +9,6 @@ export const navigation = [
   ["Home", "/"],
   ["Shop", "/shop"],
   ["About", "/about"],
-  ["Contact", "/contact"],
 ];
 export function Header() {
   const pathname = usePathname();
@@ -87,7 +86,11 @@ export function Header() {
               <path d="m16 16 5 5" />
             </svg>
           </Link>
-          <Link href="/inquiry" className="header-inquiry">
+          <Link
+            href="/inquiry"
+            className="header-inquiry"
+            aria-current={pathname === "/inquiry" ? "page" : undefined}
+          >
             Let’s talk <Arrow diagonal />
           </Link>
           <button
@@ -133,18 +136,20 @@ export function Header() {
           </button>
         </div>
         <nav aria-label="Mobile navigation">
-          {navigation.map(([label, href], i) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={close}
-              aria-current={pathname === href ? "page" : undefined}
-            >
-              <span className="eyebrow">0{i + 1}</span>
-              {label}
-              <Arrow diagonal />
-            </Link>
-          ))}
+          {[...navigation, ["Let’s talk", "/inquiry"]].map(
+            ([label, href], i) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={close}
+                aria-current={pathname === href ? "page" : undefined}
+              >
+                <span className="eyebrow">0{i + 1}</span>
+                {label}
+                <Arrow diagonal />
+              </Link>
+            ),
+          )}
         </nav>
         <Link
           href="/inquiry?type=custom"

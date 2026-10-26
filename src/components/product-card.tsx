@@ -64,6 +64,7 @@ export function ProductCard({
             </span>
           )}
           <span className="product-open">
+            <span className="product-open-label">View</span>
             <Arrow diagonal />
           </span>
         </Link>
