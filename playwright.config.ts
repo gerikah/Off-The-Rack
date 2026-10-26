@@ -1,10 +1,14 @@
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
+  outputDir: ".work/test-results",
   timeout: 90_000,
   fullyParallel: false,
   workers: 1,
-  reporter: [["list"], ["html", { open: "never" }]],
+  reporter: [
+    ["list"],
+    ["html", { open: "never", outputFolder: ".work/playwright-report" }],
+  ],
   use: {
     baseURL: "http://127.0.0.1:3100",
     channel: process.env.PLAYWRIGHT_CHANNEL || "chrome",

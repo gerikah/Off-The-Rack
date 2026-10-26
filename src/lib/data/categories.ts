@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { getSupabase } from "../supabase";
+import { getSupabase } from "../supabase/public";
 import type { Category } from "../types";
 import { logDataError } from "./errors";
 export const getCategories = cache(async (): Promise<Category[]> => {

@@ -1,4 +1,4 @@
-import { CatalogSkeleton } from "@/components/ui";
+import { CatalogSkeleton } from "@/components/shared/ui";
 
 export default function Loading() {
   return (

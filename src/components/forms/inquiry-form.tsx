@@ -1,12 +1,12 @@
 "use client";
-import { ProductImageView } from "./product-image";
+import { ProductImageView } from "../catalog/product-image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { InquiryType, Product, SubmissionResult } from "@/lib/types";
-import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
+import { formatPrice, getPrimaryImage } from "@/lib/catalog/product-utils";
 import { inquirySchema } from "@/lib/validation";
-import { Arrow, Button } from "./ui";
-import { ProductStatus } from "./product-card";
+import { Arrow, Button } from "../shared/ui";
+import { ProductStatus } from "../catalog/product-card";
 
 export function InquiryForm({
   product,

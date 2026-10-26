@@ -2,8 +2,11 @@ import type { NextConfig } from "next";
 const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const storageOrigin = storageUrl ? new URL(storageUrl).origin : "";
 const isDev = process.env.NODE_ENV === "development";
+const isLocalBrowserTest =
+  process.env.OTR_BROWSER_TEST === "1" &&
+  storageUrl === "http://127.0.0.1:4318";
 const allowLoopbackStorageImages =
-  isDev &&
+  (isDev || isLocalBrowserTest) &&
   !!storageUrl &&
   ["127.0.0.1", "localhost", "::1"].includes(new URL(storageUrl).hostname);
 const csp = [

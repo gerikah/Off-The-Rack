@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { publicMetadata } from "@/lib/seo";
 import { getArchivedProducts } from "@/lib/data/products";
-import { ProductCard } from "@/components/product-card";
-import { Button, SectionHeading } from "@/components/ui";
+import { ProductCard } from "@/components/catalog/product-card";
+import { Button, SectionHeading } from "@/components/shared/ui";
 export const metadata: Metadata = publicMetadata(
   "The archive",
   "Explore sold and archived Off The Rack pieces: a record of one-of-one hand-painted denim and reworked wearable art.",

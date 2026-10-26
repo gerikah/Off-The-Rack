@@ -19,6 +19,7 @@ const env = {
   ADMIN_NOTIFICATION_EMAIL: "admin-notifications@example.invalid",
   NEWSLETTER_SEND_ENABLED: "false",
   NEXT_TELEMETRY_DISABLED: "1",
+  OTR_BROWSER_TEST: "1",
   PLAYWRIGHT_EXTERNAL_SERVER: "true",
 };
 const children = [];

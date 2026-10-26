@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -64,32 +63,6 @@ export function SectionHeading({
         <span className="index">{index}</span>
         {label}
       </span>
-      {children}
-    </div>
-  );
-}
-export function EditorialImage({
-  src,
-  alt,
-  className = "",
-  priority = false,
-  children,
-}: {
-  src: string;
-  alt: string;
-  className?: string;
-  priority?: boolean;
-  children?: ReactNode;
-}) {
-  return (
-    <div className={`editorial-image ${className}`}>
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes="(max-width: 767px) 100vw, 70vw"
-        preload={priority}
-      />
       {children}
     </div>
   );

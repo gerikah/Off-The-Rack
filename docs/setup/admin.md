@@ -1,4 +1,4 @@
-> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](docs/PROJECT_DOCUMENTATION.md). The original admin allowlist setup below remains applicable when002 is not already installed.
+> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](../reference/architecture.md). The original admin allowlist setup below remains applicable when002 is not already installed.
 
 # Off The Rack admin setup
 
@@ -7,7 +7,7 @@ The admin app uses the existing Supabase public URL/key and email/password Auth.
 ## Apply the admin SQL
 
 1. Open the connected project in the Supabase Dashboard.
-2. Open SQL Editor, create a new query, paste the **entire contents** of [002_admin_access.sql](supabase/migrations/002_admin_access.sql), and run it as the project owner.
+2. Open SQL Editor, create a new query, paste the **entire contents** of [002_admin_access.sql](../../supabase/migrations/002_admin_access.sql), and run it as the project owner.
 3. Run only this new file. Do not replay the historical, incompatible 001_storefront.sql file.
 
 The SQL is transactional and can be rerun. It creates public.admin_users if missing. If the old reserved table uses user_id, it renames that column to id, preserving the memberships. No storefront product/category/inquiry columns are changed. It enables RLS, removes direct anon/authenticated access to the allowlist, and adds only its own named admin policies without modifying the existing public policies.

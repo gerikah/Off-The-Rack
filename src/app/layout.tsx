@@ -5,11 +5,11 @@ import "@fontsource/barlow-condensed/800.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
-import "./globals.css";
-import { SiteChrome } from "@/components/site-chrome";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { NewsletterForm } from "@/components/newsletter-form";
+import "../styles/globals.css";
+import { SiteChrome } from "@/components/layout/site-chrome";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
+import { NewsletterForm } from "@/components/forms/newsletter-form";
 import { siteUrl, siteDescription } from "@/lib/seo";
 
 export const metadata: Metadata = {

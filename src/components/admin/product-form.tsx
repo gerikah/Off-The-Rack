@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import type { Category, ProductRow, ProductImage } from "@/lib/types";
 import { saveProductAction } from "@/app/admin/actions";
 import { slugify } from "@/lib/admin/validation";
-import { PRODUCT_TEXT_LIMITS } from "@/lib/product-limits";
+import { PRODUCT_TEXT_LIMITS } from "@/lib/catalog/product-limits";
 import { NewProductImages, ProductImagesEditor } from "./product-images-editor";
 export function ProductForm({
   product,

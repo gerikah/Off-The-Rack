@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "tsBuildInfoFile": ".work/tsconfig.tsbuildinfo",
     "plugins": [{ "name": "next" }],
     "paths": { "@/*": ["./src/*"] }
   },

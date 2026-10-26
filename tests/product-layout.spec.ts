@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { productSchema } from "../src/lib/admin/validation";
-import { PRODUCT_TEXT_LIMITS } from "../src/lib/product-limits";
+import { PRODUCT_TEXT_LIMITS } from "../src/lib/catalog/product-limits";
 
 test.beforeEach(async ({ request }) => {
   await request.post("http://127.0.0.1:4318/__control", {

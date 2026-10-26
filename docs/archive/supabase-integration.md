@@ -1,8 +1,8 @@
-> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](docs/PROJECT_DOCUMENTATION.md). The original admin allowlist setup below remains applicable when002 is not already installed.
+> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](../reference/architecture.md). The original admin allowlist setup below remains applicable when002 is not already installed.
 
 # Supabase integration report
 
-This report records the storefront integration checkpoint. Admin functionality was added afterward; see [ADMIN_SETUP.md](ADMIN_SETUP.md) for current admin setup and authorization.
+This report records the storefront integration checkpoint. Admin functionality was added afterward; see [ADMIN_SETUP.md](../setup/admin.md) for current admin setup and authorization.
 
 Implemented the existing database schema as the sole storefront inventory source. The existing theme, photography, typography, animations, navigation and product/editorial components are preserved. No admin UI, live seed data, schema changes or RLS changes were applied.
 

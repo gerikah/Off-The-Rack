@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useSavedProducts } from "@/lib/saved-products";
+import { useSavedProducts } from "@/lib/catalog/saved-products";
 
 export function BookmarkIcon() {
   return (

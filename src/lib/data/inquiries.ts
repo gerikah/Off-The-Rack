@@ -1,5 +1,5 @@
 import "server-only";
-import { getSupabase } from "../supabase";
+import { getSupabase } from "../supabase/public";
 import { inquirySchema } from "../validation";
 import { logDataError } from "./errors";
 import type { InquiryEmail } from "../email/types";

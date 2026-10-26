@@ -1,4 +1,4 @@
-> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](docs/PROJECT_DOCUMENTATION.md). The original admin allowlist setup below remains applicable when002 is not already installed.
+> Historical implementation checkpoint. For current upload/newsletter features, new migrations003?005, rollout and verification, use [the project documentation](../reference/architecture.md). The original admin allowlist setup below remains applicable when002 is not already installed.
 
 # Admin implementation report
 
@@ -20,11 +20,11 @@ Every admin product image is a reusable icon placeholder; the form has four boxe
 
 Existing Supabase clients handle email/password Auth and cookie session refresh. Server-side getUser() validates the session; requireAdmin() verifies allowlist membership through otr_is_admin() before data reads or mutations. Request-scoped memoization avoids repeated verification within a request. Server Actions validate browser input and revalidate affected routes. Authenticated non-admins are denied; admin identities are not hardcoded.
 
-[002_admin_access.sql](supabase/migrations/002_admin_access.sql) creates/reuses the admin_users allowlist, normalizes its historical user_id column to id when needed, enables RLS and adds admin-only table policies. Existing public policies are preserved. Admins receive categories/products/product_images CRUD, inquiries read/update and newsletter_subscribers read. Direct allowlist access and self-enrollment are unavailable to clients. The membership function has a fixed search_path and accepts no user ID. The product-deletion RPC preserves related inquiry history and retains caller RLS checks.
+[002_admin_access.sql](../../supabase/migrations/002_admin_access.sql) creates/reuses the admin_users allowlist, normalizes its historical user_id column to id when needed, enables RLS and adds admin-only table policies. Existing public policies are preserved. Admins receive categories/products/product_images CRUD, inquiries read/update and newsletter_subscribers read. Direct allowlist access and self-enrollment are unavailable to clients. The membership function has a fixed search_path and accepts no user ID. The product-deletion RPC preserves related inquiry history and retains caller RLS checks.
 
 ## Manual Supabase setup
 
-Follow [ADMIN_SETUP.md](ADMIN_SETUP.md) for exact SQL and account instructions:
+Follow [ADMIN_SETUP.md](../setup/admin.md) for exact SQL and account instructions:
 
 1. Run the entire new 002_admin_access.sql in the existing project's SQL Editor. Do not replay historical 001_storefront.sql.
 2. Create a confirmed email/password user under Authentication > Users > Add user > Create new user.

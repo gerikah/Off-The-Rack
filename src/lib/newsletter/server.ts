@@ -42,7 +42,7 @@ export function newsletterConfiguration() {
     (replyTo && !z.email().safeParse(replyTo).success)
   ) {
     throw new NewsletterError(
-      "Email delivery is not configured. Complete docs/NEWSLETTER_SETUP.md before sending.",
+      "Email delivery is not configured. Complete docs/setup/newsletter.md before sending.",
       503,
     );
   }
@@ -60,7 +60,7 @@ export function newsletterSendingEnabled() {
 export function requireNewsletterSending() {
   if (!newsletterSendingEnabled())
     throw new NewsletterError(
-      "Subscriber campaigns are disabled. Complete docs/NEWSLETTER_SETUP.md before enabling campaign delivery.",
+      "Subscriber campaigns are disabled. Complete docs/setup/newsletter.md before enabling campaign delivery.",
       503,
     );
 }

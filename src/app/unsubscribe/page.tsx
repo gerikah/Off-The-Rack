@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { UnsubscribeForm } from "@/components/unsubscribe-form";
+import { UnsubscribeForm } from "@/components/forms/unsubscribe-form";
 export const metadata: Metadata = {
   title: "Unsubscribe | Off The Rack",
   description: "Manage your Off The Rack drop-list subscription.",

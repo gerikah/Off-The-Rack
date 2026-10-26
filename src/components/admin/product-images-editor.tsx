@@ -8,14 +8,14 @@ import {
   useSyncExternalStore,
 } from "react";
 import type { ProductImage } from "@/lib/types";
-import { getGalleryImages, productImageUrl } from "@/lib/product-utils";
+import { getGalleryImages, productImageUrl } from "@/lib/catalog/product-utils";
 import { prepareBrowserImage } from "@/lib/images/prepare";
 import { IMAGE_MIME_TYPES } from "@/lib/images/validation";
 import {
   productImageAction,
   type ImageActionState,
 } from "@/app/admin/image-actions";
-import { ProductImageView } from "@/components/product-image";
+import { ProductImageView } from "@/components/catalog/product-image";
 
 const subscribeToHydration = () => () => {};
 const MAX_PRODUCT_IMAGES = 12;

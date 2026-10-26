@@ -1,5 +1,5 @@
-import type { Product, ProductImage } from "./types";
-import { isManagedImagePath } from "./images/validation";
+import type { Product, ProductImage } from "../types";
+import { isManagedImagePath } from "../images/validation";
 export const PRODUCT_IMAGE_FALLBACK = "/images/background.webp";
 export const PRODUCT_IMAGE_BUCKET = "product-images";
 

@@ -2,9 +2,9 @@
 import { useState } from "react";
 import type { Product, Category } from "@/lib/types";
 import { ProductGrid } from "./product-card";
-import { Arrow } from "./ui";
+import { Arrow } from "../shared/ui";
 import { BookmarkIcon } from "./product-actions";
-import { useSavedProducts } from "@/lib/saved-products";
+import { useSavedProducts } from "@/lib/catalog/saved-products";
 
 export function ShopCatalog({
   products,

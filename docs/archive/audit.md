@@ -2,7 +2,7 @@
 
 ## Completion checkpoint — 22 September 2026
 
-The repository implementation is complete. The full production suite passed all 55 checks in one run; formatting, lint, type checking, 46 isolated database assertions and the credential-pattern scan also passed. See [Verification and handoff](VERIFICATION.md) for evidence and limitations, and [Project documentation](PROJECT_DOCUMENTATION.md#migrations-and-rollout) for the staging rollout sequence. Live migrations, Storage acceptance, email-provider setup and deployment remain outstanding.
+The repository implementation is complete. The full production suite passed all 55 checks in one run; formatting, lint, type checking, 46 isolated database assertions and the credential-pattern scan also passed. See [Verification and handoff](verification.md) for evidence and limitations, and [Project documentation](../reference/architecture.md#migrations-and-rollout) for the staging rollout sequence. Live migrations, Storage acceptance, email-provider setup and deployment remain outstanding.
 
 The findings below preserve the original audit baseline and describe the treatments now implemented locally.
 

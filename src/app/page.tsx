@@ -1,11 +1,11 @@
 import { publicMetadata, siteUrl, siteDescription } from "@/lib/seo";
-import { StructuredData } from "@/components/structured-data";
+import { StructuredData } from "@/components/shared/structured-data";
 import { brand } from "@/lib/brand";
 import Image from "next/image";
 import Link from "next/link";
 import { getNewArrivals, getFeaturedProducts } from "@/lib/data/products";
-import { Arrow, Button, Marquee, SectionHeading } from "@/components/ui";
-import { ProductCard } from "@/components/product-card";
+import { Arrow, Button, Marquee, SectionHeading } from "@/components/shared/ui";
+import { ProductCard } from "@/components/catalog/product-card";
 
 export const metadata = publicMetadata(
   "Wearable art. No repeats.",

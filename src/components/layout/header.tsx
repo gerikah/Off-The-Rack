@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Arrow } from "./ui";
+import { Arrow } from "../shared/ui";
 
-export const navigation = [
+const navigation = [
   ["Home", "/"],
   ["Shop", "/shop"],
   ["About", "/about"],

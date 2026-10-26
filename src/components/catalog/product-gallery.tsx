@@ -6,9 +6,9 @@ import {
   getGalleryImages,
   productImageUrl,
   PRODUCT_IMAGE_FALLBACK,
-} from "@/lib/product-utils";
+} from "@/lib/catalog/product-utils";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
-import { Arrow } from "./ui";
+import { Arrow } from "../shared/ui";
 export function ProductGallery({
   images,
   alt,

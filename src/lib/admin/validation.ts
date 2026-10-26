@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRODUCT_TEXT_LIMITS } from "../product-limits";
+import { PRODUCT_TEXT_LIMITS } from "../catalog/product-limits";
 export type ActionState = {
   error?: string;
   fields?: Record<string, string>;

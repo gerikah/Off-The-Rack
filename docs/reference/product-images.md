@@ -4,7 +4,7 @@ The existing `product_images` model is preserved: `product_id`, `image_url`, `st
 
 ## Setup
 
-1. Back up the connected database and inspect its applied migrations and `product-images` bucket. Do not run historical `001_storefront.sql`. Apply `002_admin_access.sql` only if it has not been applied, following `ADMIN_SETUP.md`.
+1. Back up the connected database and inspect its applied migrations and `product-images` bucket. Do not run historical `001_storefront.sql`. Apply `002_admin_access.sql` only if it has not been applied, following `docs/setup/admin.md`.
 2. Confirm `supabase/migrations/003_product_images.sql` has already been applied, then apply `supabase/migrations/007_product_image_workflow.sql` to development/staging and production. Migration 007 keeps the existing table, normalizes legacy cover flags, enforces at most one primary image, and hardens the existing bucket policies. Do not replay migration 003 when it is already present.
 3. The migration creates the `product-images` bucket if absent. New uploads are restricted to image MIME types with a 5 MB bucket limit. It deliberately refuses to change an existing nonempty private bucket into a public bucket; review its contents first in Supabase Storage. Public catalog images must be appropriate for anyone with their URL to view, including photos of archived or sold products. A public bucket bypasses read RLS for known public URLs; it is not a place for private artwork or customer files.
 4. Existing server environment values `NEXT_PUBLIC_SUPABASE_URL` and the publishable key are sufficient. The upload uses the administrator's verified Supabase session and RLS; no service-role key is needed. Configure the Vercel production variables and deploy the repository using the Next.js preset.

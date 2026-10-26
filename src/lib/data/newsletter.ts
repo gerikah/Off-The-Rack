@@ -1,5 +1,5 @@
 import "server-only";
-import { getSupabase } from "../supabase";
+import { getSupabase } from "../supabase/public";
 import { newsletterSchema } from "../validation";
 import { z } from "zod";
 import { logEmailError } from "../email/loops";

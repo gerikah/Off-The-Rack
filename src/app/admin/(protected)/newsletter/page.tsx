@@ -26,7 +26,7 @@ export default async function NewsletterPage() {
           <h2>Newsletter setup is required.</h2>
           <p>
             Apply migration 004 to the existing Supabase project, then follow
-            docs/NEWSLETTER_SETUP.md and reload this page. Subscriber records
+            docs/setup/newsletter.md and reload this page. Subscriber records
             are preserved.
           </p>
         </div>

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { publicMetadata } from "@/lib/seo";
 import { getProducts } from "@/lib/data/products";
 import { getCategories } from "@/lib/data/categories";
-import { ShopCatalog } from "@/components/shop-catalog";
+import { ShopCatalog } from "@/components/catalog/shop-catalog";
 
 export const metadata: Metadata = publicMetadata(
   "Shop the collection",

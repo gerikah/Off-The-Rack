@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { publicMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
-import { Arrow } from "@/components/ui";
+import { Arrow } from "@/components/shared/ui";
 export const metadata: Metadata = publicMetadata(
   "Get in touch",
   "Contact Off The Rack about hand-painted clothing, custom ideas, availability and collaborations. Every conversation starts with an inquiry.",

@@ -1,6 +1,6 @@
 # Off The Rack project documentation
 
-Email update: [Loops setup](LOOPS_SETUP.md) documents the primary contact platform, marketing welcome workflow, transactional inquiry confirmations, migration 006, and subscriber reactivation. Existing Resend admin campaigns remain as legacy tools and should stay disabled while Loops owns marketing. The campaign/batch details below describe those legacy tools.
+Email update: [Loops setup](../setup/loops.md) documents the primary contact platform, marketing welcome workflow, transactional inquiry confirmations, migration 006, and subscriber reactivation. Existing Resend admin campaigns remain as legacy tools and should stay disabled while Loops owns marketing. The campaign/batch details below describe those legacy tools.
 
 ## Application and route map
 
@@ -63,7 +63,7 @@ The TypeScript schema is maintained in `src/lib/types.ts` and `src/lib/database.
 ## Migrations and rollout
 
 1. Back up the existing project, export schema/policies and record current table counts. Run `supabase/verify-security.sql` in the Dashboard SQL Editor. Do not copy subscriber lists into logs or tickets.
-2. Use a staging clone of the actual current schema. Do not run historical `001_storefront.sql`, `supabase db reset`, or blindly push this entire historical directory. If 002 is already installed, preserve it; otherwise follow `ADMIN_SETUP.md` first.
+2. Use a staging clone of the actual current schema. Do not run historical `001_storefront.sql`, `supabase db reset`, or blindly push this entire historical directory. If 002 is already installed, preserve it; otherwise follow `docs/setup/admin.md` first.
 3. Run complete new transactional files in order: **003_product_images**, **004_newsletter**, **005_submission_security**. Replay each once in staging to verify idempotence. Existing products, categories, subscribers, inquiry history, admin memberships and historical policy definitions are retained.
 4. 003 reuses image columns, configures only product-images, adds storage policies, image RPCs and a cleanup queue. Stop and inspect if it detects a nonempty private bucket; never publish private files as a workaround.
 5. 004 requires the current `is_active` subscriber schema, adds nullable consent history and campaign/queue/token records. Case-normalized duplicate guards preserve existing rows and deduplicate recipients; inactive records never silently resubscribe. Legacy signup RPC access, if present, is retired because current code uses guarded inserts.
@@ -82,13 +82,13 @@ Run `npm run test:db` for isolated PostgreSQL checks, then inspect/run staging t
 
 ## Product images
 
-See [Product image operations](PRODUCT_IMAGES.md) for complete setup, workflow and recovery. Source files may be JPEG, PNG, WebP or AVIF up to 5 MB. The client checks signatures, decodes and prepares a WebP below 3 MB and at most 2400px; the server independently validates MIME/signature, bounds decoding to 40 megapixels and re-encodes. Original names are discarded in favor of `products/{product-uuid}/{random-uuid}.webp`; EXIF/GPS metadata is stripped. Alt text is required. Up to twelve images are supported.
+See [Product image operations](product-images.md) for complete setup, workflow and recovery. Source files may be JPEG, PNG, WebP or AVIF up to 5 MB. The client checks signatures, decodes and prepares a WebP below 3 MB and at most 2400px; the server independently validates MIME/signature, bounds decoding to 40 megapixels and re-encodes. Original names are discarded in favor of `products/{product-uuid}/{random-uuid}.webp`; EXIF/GPS metadata is stripped. Alt text is required. Up to twelve images are supported.
 
 Replacement never overwrites the old URL. Database reference guards and a cleanup queue preserve shared objects and prevent reattaching claimed objects. Failed removals retry from the admin list, in bounded groups. Legacy local/external/unrecognized files are deliberately kept. An interrupted upload before database attachment may leave an object outside the queue; periodically review older unreferenced generated objects and remove them through the Storage API only after checking all references. Authorized admins are trusted; a deliberately modified admin Storage client can bypass this app's decoder, although bucket size/MIME/RLS restrictions remain.
 
 ## Newsletter architecture and manual setup
 
-[NEWSLETTER_SETUP.md](NEWSLETTER_SETUP.md) contains the exact provider account, sender/domain verification, API-key creation, Vercel secret configuration, testing, unsubscribe and production rollout instructions. This implementation uses **Next server routes on Vercel**, so it needs no Supabase Edge Function deployment or Supabase service-role key. Resend was chosen because the repository had no existing mail provider. Provider-specific delivery code is contained in `src/lib/newsletter/server.ts`.
+[NEWSLETTER_SETUP.md](../setup/newsletter.md) contains the exact provider account, sender/domain verification, API-key creation, Vercel secret configuration, testing, unsubscribe and production rollout instructions. This implementation uses **Next server routes on Vercel**, so it needs no Supabase Edge Function deployment or Supabase service-role key. Resend was chosen because the repository had no existing mail provider. Provider-specific delivery code is contained in `src/lib/newsletter/server.ts`.
 
 New signups explicitly consent. Migration 006 returns a distinct already-subscribed status and reactivates inactive recipients on fresh form consent, preserving their IDs and creation timestamps. Existing legacy records remain intact and require verified signup evidence before inclusion in legacy campaigns. See the Loops guide for the current subscription lifecycle and limitations.
 
@@ -145,4 +145,4 @@ Local fonts and existing Next responsive image optimization remain. Catalog skel
 | Old metadata or images                  | Rebuild after public env changes; replacement uses new URLs. Verify canonical origin and relevant CSP/remotePatterns allowlist.                                 |
 | Tests collide or hang                   | Only one suite/server uses 3100/4318. Stop only test processes you started; do not kill unrelated user processes.                                               |
 
-Keep original photography/assets and design tokens. Periodically audit dependencies, test RLS after schema changes, review provider suppression and cleanup backlog, and retain subscriber opt-out evidence while applying your retention policy. No live migration, authenticated production write, real upload, external email, domain verification or deployment was performed as part of these repository changes. See `docs/VERIFICATION.md` for final command results and boundaries.
+Keep original photography/assets and design tokens. Periodically audit dependencies, test RLS after schema changes, review provider suppression and cleanup backlog, and retain subscriber opt-out evidence while applying your retention policy. No live migration, authenticated production write, real upload, external email, domain verification or deployment was performed as part of these repository changes. See `docs/archive/verification.md` for final command results and boundaries.

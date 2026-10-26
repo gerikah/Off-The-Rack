@@ -33,7 +33,7 @@ export const newsletterActionSchema = z.discriminatedUnion("action", [
   }),
 ]);
 
-export function escapeEmailHtml(value: string) {
+function escapeEmailHtml(value: string) {
   return value.replace(
     /[&<>"']/g,
     (character) =>

@@ -5,7 +5,7 @@ import {
   productImageUrl,
   selectPrimaryImage,
   PRODUCT_IMAGE_FALLBACK,
-} from "../src/lib/product-utils";
+} from "../src/lib/catalog/product-utils";
 import type { ProductImage } from "../src/lib/types";
 const image = (
   id: string,

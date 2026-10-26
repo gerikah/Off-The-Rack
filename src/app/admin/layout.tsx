@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./admin.css";
+import "../../styles/admin.css";
 export const metadata: Metadata = {
   title: "Admin",
   robots: { index: false, follow: false },

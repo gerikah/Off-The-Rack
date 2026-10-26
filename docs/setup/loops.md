@@ -85,7 +85,7 @@ Calls are awaited within the route, not detached background promises. Each event
 
 Loops owns its campaign/workflow opt-out and suppression state. Supabase owns the website's local record. **Automatic Loops → Supabase unsubscribe webhooks are not implemented in this change.** A future authenticated/verified webhook can set `is_active=false` and `unsubscribed_at` without deleting a row. The server contact helper already accepts `subscribed=false` for a future outbound reconciliation process; it is not exposed as an anonymous update endpoint. Never replay old `subscribed=true` snapshots over a newer provider opt-out: the current true-setting call is only made for a fresh explicit form consent.
 
-The existing Resend admin campaigns and token-unsubscribe route are preserved for compatibility. They do not synchronize Loops opt-outs. Keep `NEWSLETTER_SEND_ENABLED=false` and use Loops for new marketing; do not send from both platforms before reconciling preferences. Existing Resend setup is documented separately in [the legacy campaign guide](NEWSLETTER_SETUP.md).
+The existing Resend admin campaigns and token-unsubscribe route are preserved for compatibility. They do not synchronize Loops opt-outs. Keep `NEWSLETTER_SEND_ENABLED=false` and use Loops for new marketing; do not send from both platforms before reconciling preferences. Existing Resend setup is documented separately in [the legacy campaign guide](newsletter.md).
 
 ## 6. Test locally and prepare Vercel
 

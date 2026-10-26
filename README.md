@@ -2,7 +2,7 @@
 
 **Wearable art. No repeats.** A responsive catalog for one-of-one hand-painted and customized clothing from the Philippines.
 
-[Live storefront](https://offtherack.vercel.app/) · [Project documentation](docs/PROJECT_DOCUMENTATION.md) · [Audit](docs/AUDIT.md) · [Loops email setup](docs/LOOPS_SETUP.md)
+[Live storefront](https://offtherack.vercel.app/) · [Documentation](docs/README.md) · [Folder structure](docs/reference/project-structure.md) · [Loops email setup](docs/setup/loops.md)
 
 Customers browse and send inquiries. Availability, payment and delivery are confirmed manually; there is no checkout or automatic reservation.
 
@@ -39,18 +39,18 @@ npm run dev
 
 Required catalog variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` fallback), `NEXT_PUBLIC_SITE_URL`. Optional public contact/social overrides are listed in `.env.example`.
 
-Server email variables: `LOOPS_API_KEY`, `LOOPS_WELCOME_EVENT_NAME`, and `LOOPS_INQUIRY_TRANSACTIONAL_ID`. Optional settings are `LOOPS_NEWSLETTER_MAILING_LIST_ID`, `LOOPS_ADMIN_NOTIFICATION_TRANSACTIONAL_ID` and `ADMIN_NOTIFICATION_EMAIL`. Follow [Loops setup](docs/LOOPS_SETUP.md) to publish templates and activate the welcome workflow. Keep the legacy `NEWSLETTER_SEND_ENABLED=false` when using Loops for marketing. Values in documentation are placeholders only; existing local credentials have not been changed.
+Server email variables: `LOOPS_API_KEY`, `LOOPS_WELCOME_EVENT_NAME`, and `LOOPS_INQUIRY_TRANSACTIONAL_ID`. Optional settings are `LOOPS_NEWSLETTER_MAILING_LIST_ID`, `LOOPS_ADMIN_NOTIFICATION_TRANSACTIONAL_ID` and `ADMIN_NOTIFICATION_EMAIL`. Follow [Loops setup](docs/setup/loops.md) to publish templates and activate the welcome workflow. Keep the legacy `NEWSLETTER_SEND_ENABLED=false` when using Loops for marketing. Values in documentation are placeholders only; existing local credentials have not been changed.
 
 ## Supabase and admin setup
 
 This repository extends an existing connected schema. **Never replay `supabase/migrations/001_storefront.sql`, run a blind database reset, or treat the test fixture as a production schema.** The historical migration is incompatible with the current application.
 
 1. Back up the existing database, inspect current columns/constraints/RLS with `supabase/verify-security.sql`, and use a staging clone first.
-2. If not already installed, apply `002_admin_access.sql` following [admin setup](ADMIN_SETUP.md). Preserve the existing public policies and data.
+2. If not already installed, apply `002_admin_access.sql` following [admin setup](docs/setup/admin.md). Preserve the existing public policies and data.
 3. Apply only the new files, in order: `003_product_images.sql`, `004_newsletter.sql`, `005_submission_security.sql`. They are transactional and idempotent against the documented current schema. Follow the preflight/rollout procedure in the project documentation.
 4. Create a confirmed email/password user in Supabase Auth and enroll its UUID in `public.admin_users`; never assign access through editable user metadata. Sign in at `/admin/login`.
-5. Migration 003 configures the public `product-images` bucket and admin Storage rules. Read [image operations](docs/PRODUCT_IMAGES.md), including private-bucket safeguards and cleanup limitations.
-6. Apply `006_loops_subscriptions.sql` after 002–005, then configure Loops using [the manual guide](docs/LOOPS_SETUP.md). The migration adds consent-based reactivation and normalized email uniqueness while preserving RLS. It stops for manual review if normalized duplicates exist.
+5. Migration 003 configures the public `product-images` bucket and admin Storage rules. Read [image operations](docs/reference/product-images.md), including private-bucket safeguards and cleanup limitations.
+6. Apply `006_loops_subscriptions.sql` after 002–005, then configure Loops using [the manual guide](docs/setup/loops.md). The migration adds consent-based reactivation and normalized email uniqueness while preserving RLS. It stops for manual review if normalized duplicates exist.
 
 For a brand-new Supabase project, obtain a reviewed schema-only export from the existing project and its current policies first. The historic migration chain is deliberately not a bootstrap installer.
 
@@ -73,7 +73,7 @@ npm audit
 
 `npm run test:production` builds with isolated fixture values; run a normal `npm run build` before starting your actual configured application afterward.
 
-Browser tests start a local Auth/PostgREST/Storage fixture on 4318 and Next on 3100. They override public connection values, clear the email API key and disable campaign sending, so tests do not use live customer records or send email. Chrome is the default; `PLAYWRIGHT_CHANNEL=msedge` selects installed Edge. Do not run parallel suites or another Next dev server in the same checkout. PGlite tests replay migrations twice and exercise allow/deny cases using a test-only schema; staging Supabase acceptance is still required.
+Browser tests start a local Auth/PostgREST/Storage fixture on 4318 and Next on 3100. They override public connection values, clear the email API key and disable campaign sending, so tests do not use live customer records or send email. Results are written to `.work/test-results/` and the HTML report to `.work/playwright-report/`. Chrome is the default; `PLAYWRIGHT_CHANNEL=msedge` selects installed Edge. Do not run parallel suites or another Next dev server in the same checkout. PGlite tests replay migrations twice and exercise allow/deny cases using a test-only schema; staging Supabase acceptance is still required.
 
 `npm run assets` rebuilds existing optimized photography. `npm run assets:social` regenerates branded social artwork/app icons. Bundle analysis measures all emitted browser chunks and source maps; it is not a Web Vitals score.
 
@@ -91,4 +91,4 @@ Saved pieces are local to a browser. Catalog filtering currently loads the compl
 
 The existing design is preserved. Branded sharing artwork is in `public/social-sharing.jpg`. Local verification screenshots are generated under ignored `.work/storefront-audit/`; add approved, non-sensitive production screenshots here when ready. Do not commit screenshots containing customer/admin information.
 
-See the [verification report](docs/VERIFICATION.md), [changed-file inventory](docs/CHANGED_FILES.md), and [measured bundle report](docs/BUNDLE_REPORT.json) for the implementation handoff.
+See the [verification report](docs/archive/verification.md), [changed-file inventory](docs/archive/changed-files.md), and [measured bundle report](docs/archive/bundle-report.json) for the implementation handoff.

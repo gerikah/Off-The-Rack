@@ -320,7 +320,9 @@ for (const width of [375, 430, 768, 1024, 1440]) {
           .analyze()
       ).violations,
     ).toEqual([]);
-    await section.screenshot({ path: `test-results/newsletter-${width}.png` });
+    await section.screenshot({
+      path: `.work/test-results/newsletter-${width}.png`,
+    });
   });
 }
 

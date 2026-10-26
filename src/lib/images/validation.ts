@@ -9,7 +9,7 @@ export const IMAGE_MIME_TYPES = [
   "image/webp",
   "image/avif",
 ] as const;
-export type ImageMime = (typeof IMAGE_MIME_TYPES)[number];
+type ImageMime = (typeof IMAGE_MIME_TYPES)[number];
 
 export function detectImageMime(bytes: Uint8Array): ImageMime | null {
   if (bytes.length < 12) return null;

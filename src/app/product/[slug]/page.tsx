@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { publicMetadata, siteUrl } from "@/lib/seo";
-import { StructuredData } from "@/components/structured-data";
-import { ProductActions } from "@/components/product-actions";
+import { StructuredData } from "@/components/shared/structured-data";
+import { ProductActions } from "@/components/catalog/product-actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/lib/data/products";
-import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
-import { ProductGallery } from "@/components/product-gallery";
-import { Arrow } from "@/components/ui";
+import { formatPrice, getPrimaryImage } from "@/lib/catalog/product-utils";
+import { ProductGallery } from "@/components/catalog/product-gallery";
+import { Arrow } from "@/components/shared/ui";
 import { brand } from "@/lib/brand";
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

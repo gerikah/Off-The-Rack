@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { loginSchema, type ActionState } from "@/lib/admin/validation";
 import { logDataError } from "@/lib/data/errors";
 export async function loginAction(

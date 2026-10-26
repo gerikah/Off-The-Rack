@@ -1,8 +1,8 @@
 import { ProductImageView } from "./product-image";
 import Link from "next/link";
 import type { Product, ProductStatus as Status } from "@/lib/types";
-import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
-import { Arrow } from "./ui";
+import { formatPrice, getPrimaryImage } from "@/lib/catalog/product-utils";
+import { Arrow } from "../shared/ui";
 import { SaveProductButton } from "./product-actions";
 
 export function ProductStatus({ status }: { status: Status }) {

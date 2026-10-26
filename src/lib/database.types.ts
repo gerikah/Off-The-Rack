@@ -1,4 +1,4 @@
-// Maintained against the existing public schema; see DEVELOPMENT.md.
+// Maintained against the existing public schema; see docs/development.md.
 import type {
   Category,
   ProductRow,

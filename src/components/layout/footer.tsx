@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
-import { Arrow } from "./ui";
+import { Arrow } from "../shared/ui";
 
 export function Footer() {
   return (

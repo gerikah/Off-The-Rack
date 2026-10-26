@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 import { publicMetadata } from "@/lib/seo";
-import { Arrow, Button } from "@/components/ui";
+import { Arrow, Button } from "@/components/shared/ui";
 
 export const metadata: Metadata = publicMetadata(
   "Our story",

@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/lib/database.types";
 import type { ProductImage } from "@/lib/types";
-import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-utils";
+import { PRODUCT_IMAGE_BUCKET } from "@/lib/catalog/product-utils";
 import { processProductImage } from "@/lib/images/process";
 import { isManagedImagePath } from "@/lib/images/validation";
 import { logDataError } from "@/lib/data/errors";
@@ -95,10 +95,7 @@ function uploadMessage(error: ImageFailure) {
     return "Unsupported image type.";
   return "Could not upload image.";
 }
-export async function cleanupImageFiles(
-  client: Client,
-  paths: (string | null)[],
-) {
+async function cleanupImageFiles(client: Client, paths: (string | null)[]) {
   let pending = false;
   for (const path of new Set(paths.filter(isManagedImagePath))) {
     const claim = await client.rpc("otr_claim_image_cleanup", {

@@ -2,12 +2,12 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import type { AdminProduct, AdminCategory } from "@/lib/admin/data";
-import { formatPrice, getPrimaryImage } from "@/lib/product-utils";
+import { formatPrice, getPrimaryImage } from "@/lib/catalog/product-utils";
 import { productTransitions } from "@/lib/admin/validation";
 import { productAction } from "@/app/admin/actions";
 import { AdminEmpty, ImagePlaceholder, StatusBadge, adminDate } from "./ui";
 import { ConfirmAction } from "./confirm-action";
-import { ProductImageView } from "@/components/product-image";
+import { ProductImageView } from "@/components/catalog/product-image";
 import { imageCleanupAction } from "@/app/admin/image-actions";
 export function ProductsTable({
   products,

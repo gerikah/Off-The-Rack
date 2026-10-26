@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase/public";
 import { hashToken, validUnsubscribeToken } from "@/lib/newsletter/tokens";
 import {
   PublicRequestError,

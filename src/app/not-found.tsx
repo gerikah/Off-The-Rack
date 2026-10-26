@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui";
+import { Button } from "@/components/shared/ui";
 export default function NotFound() {
   return (
     <section className="section-wrap not-found">

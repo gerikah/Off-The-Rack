@@ -4,7 +4,6 @@ assets/
 public/
 .work/
 package-lock.json
-playwright-report/
-test-results/
+next-env.d.ts
 AGENTS.md
 CLAUDE.md

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { newsletterSchema } from "@/lib/validation";
-import { Arrow } from "./ui";
+import { Arrow } from "../shared/ui";
 import type { SubmissionResult } from "@/lib/types";
 
 export function NewsletterForm() {

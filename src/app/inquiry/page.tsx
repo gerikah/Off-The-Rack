@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 import { getProductBySlug } from "@/lib/data/products";
-import { InquiryForm } from "@/components/inquiry-form";
+import { InquiryForm } from "@/components/forms/inquiry-form";
 export const metadata: Metadata = {
   title: "Send an inquiry",
   description:

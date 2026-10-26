@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { logDataError } from "@/lib/data/errors";
 // React cache is request-scoped, never a shared cache of authorization decisions.
 export const getAdminSession = cache(async () => {

@@ -144,7 +144,7 @@ export function NewsletterManager({
       {!ready && (
         <p className="admin-newsletter-notice">
           Email delivery is not configured. You can prepare drafts; complete
-          docs/NEWSLETTER_SETUP.md before sending.
+          docs/setup/newsletter.md before sending.
         </p>
       )}
       {ready && !enabled && (
@@ -274,7 +274,7 @@ export function NewsletterManager({
               {selected.status === "paused" && (
                 <p className="admin-error">
                   This campaign needs reconciliation in the provider dashboard.
-                  Follow docs/NEWSLETTER_SETUP.md before continuing; creating a
+                  Follow docs/setup/newsletter.md before continuing; creating a
                   replacement may duplicate delivery.
                 </p>
               )}
