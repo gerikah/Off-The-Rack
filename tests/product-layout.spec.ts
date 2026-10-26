@@ -140,6 +140,12 @@ test("product editor shows and enforces the shared copy limits", async ({
   await page.getByRole("button", { name: "LOG IN", exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);
   await page.goto("/admin/products/new");
+  await expect(page.locator(".admin-copy-limits")).toContainText(
+    "Product title: up to 60 characters.",
+  );
+  await expect(page.locator(".admin-copy-limits")).toContainText(
+    "Description: up to 240 characters.",
+  );
   for (const [name, limit] of Object.entries(PRODUCT_TEXT_LIMITS)) {
     const input = page.locator(`#product-${name}`);
     await expect(input).toHaveAttribute("maxlength", String(limit));

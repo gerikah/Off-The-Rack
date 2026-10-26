@@ -33,6 +33,10 @@ export function ProductForm({
   });
   const [imageBusy, setImageBusy] = useState(false);
   const [manualSlug, setManualSlug] = useState(!!product);
+  const overLimitFields = Object.entries(PRODUCT_TEXT_LIMITS).filter(
+    ([name, limit]) =>
+      values[name as keyof typeof PRODUCT_TEXT_LIMITS].length > limit,
+  );
   type TextField = Exclude<keyof typeof values, "featured" | "bestseller">;
   function change(name: TextField, value: string) {
     setValues((previous) => ({
@@ -112,6 +116,11 @@ export function ProductForm({
           <div>
             <section className="admin-panel">
               <h2>Basic information</h2>
+              <p className="admin-copy-limits">
+                Product title: up to {PRODUCT_TEXT_LIMITS.name} characters.
+                Description: up to {PRODUCT_TEXT_LIMITS.description} characters.
+                The counters below update as you type.
+              </p>
               <div className="admin-fields-grid">
                 {field("name", "Product name", { required: true })}
                 {field("slug", "Slug", { required: true, max: 160 })}
@@ -231,6 +240,11 @@ export function ProductForm({
           </div>
         </div>
         <div className="admin-form-actions">
+          {overLimitFields.length > 0 && (
+            <p className="admin-field-error" role="status">
+              Shorten the highlighted fields to enable saving.
+            </p>
+          )}
           <Link
             className="admin-button admin-button-secondary"
             href="/admin/products"
@@ -239,7 +253,12 @@ export function ProductForm({
           </Link>
           <button
             className="admin-button"
-            disabled={pending || imageBusy || !categories.length}
+            disabled={
+              pending ||
+              imageBusy ||
+              !categories.length ||
+              overLimitFields.length > 0
+            }
           >
             {pending ? "SAVING..." : product ? "SAVE CHANGES" : "SAVE PRODUCT"}
           </button>

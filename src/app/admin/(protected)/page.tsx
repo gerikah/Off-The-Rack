@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/admin/data";
-import { AdminHeading } from "@/components/admin/ui";
+import { AdminEmpty, AdminHeading } from "@/components/admin/ui";
 import { InquiriesTable } from "@/components/admin/inquiries";
 export default async function Dashboard() {
   const stats = await getDashboardStats();
@@ -28,6 +28,16 @@ export default async function Dashboard() {
           </Link>
         ))}
       </div>
+      {stats.total === 0 && (
+        <section className="admin-panel">
+          <AdminEmpty
+            title="YOUR RACK IS EMPTY."
+            description="Add your first product to start building the collection."
+            href="/admin/products/new"
+            label="ADD YOUR FIRST PRODUCT"
+          />
+        </section>
+      )}
       <section className="admin-panel">
         <div className="admin-panel-heading">
           <h2>Recent inquiries</h2>

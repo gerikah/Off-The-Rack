@@ -424,6 +424,18 @@ for (const width of [375, 768, 1440])
 test("admin empty states remain useful", async ({ page, request }) => {
   await request.post(control, { data: { scenario: "empty" } });
   await login(page);
+  await expect(page.locator(".admin-stat strong")).toHaveText([
+    "0",
+    "0",
+    "0",
+    "0",
+  ]);
+  await expect(
+    page.getByRole("heading", { name: "YOUR RACK IS EMPTY." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "ADD YOUR FIRST PRODUCT" }),
+  ).toHaveAttribute("href", "/admin/products/new");
   await page.goto("/admin/products");
   await expect(page.getByText("NO PRODUCTS YET.")).toBeVisible();
   await page.goto("/admin/inquiries");
